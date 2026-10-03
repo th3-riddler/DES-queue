@@ -5,3 +5,12 @@ version = 4
 [[package]]
 name = "des-queue"
 version = "0.1.0"
+dependencies = [
+ "rand_simple",
+]
+
+[[package]]
+name = "rand_simple"
+version = "0.2.39"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e813f2d40c0b6c811903f72565c00173d6ecfc7bc1d2e0e8ab5eaea32f54a9df"
