@@ -1,4 +1,4 @@
-use std::{collections::BinaryHeap};
+use std::collections::BinaryHeap;
 use rand_simple::Exponential;
 
 use crate::simulation::{events::{Event, EventType::*}, node::{ArrivalResult, DepartureResult, Node}};
@@ -26,9 +26,9 @@ impl<'a> Simulator<'a> {
         }
     }
 
-    pub fn current_time(&self) -> f64 { self.current_time }
-    pub fn event_queue(&self) -> &BinaryHeap<Event> { &self.event_queue }
-    pub fn node(&self) -> &Node { self.node }
+    pub fn _current_time(&self) -> f64 { self.current_time }
+    pub fn _event_queue(&self) -> &BinaryHeap<Event> { &self.event_queue }
+    pub fn _node(&self) -> &Node { self.node }
 
     #[inline]
     fn schedule_arrival(&mut self, time: f64) {
