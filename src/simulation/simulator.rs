@@ -60,6 +60,7 @@ impl<'a> Simulator<'a> {
     /// Handles the departure events
     fn handle_departure(&mut self) {
         match self.node.process_departure() {
+            // If the server continued processing after the departure, computes the departure time of the packet that just entered
             DepartureResult::ServerContinuedProcessing => {
                 let departure_time: f64 = self.current_time + self.sample_exp_time();
                 self.schedule_departure(departure_time);

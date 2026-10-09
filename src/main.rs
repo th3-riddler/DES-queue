@@ -1,6 +1,6 @@
-use crate::simulation::{node::Node, simulator::Simulator};
-
 mod simulation;
+
+use crate::simulation::{node::Node, simulator::Simulator};
 
 fn main() {
     let mut node = Node::new(1);
