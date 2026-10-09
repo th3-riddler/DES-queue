@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{Node, simulation::Simulator};
+    use crate::{Node, simulation::simulator::Simulator};
 
     #[test]
     fn simulation_stays_within_max_time() {
@@ -10,7 +10,7 @@ mod tests {
         simulator.run(10.0);
 
         println!("{}", simulator.current_time());
-        assert!(simulator.current_time() <= 9.0);
+        assert!(simulator.current_time() <= 10.0);
     }
 
     #[test]
@@ -20,8 +20,8 @@ mod tests {
 
         simulator.run(10.0);
 
-        assert!(simulator.node().active_servers <= simulator.node().total_servers);
-        assert_eq!(simulator.node().buffer_size, 0);
+        assert!(simulator.node().active_servers() <= simulator.node().total_servers());
+        assert_eq!(simulator.node().buffer.len(), 0);
     }
 
     #[test]
@@ -36,7 +36,7 @@ mod tests {
         simulator2.run(10.0);
 
         assert_eq!(simulator1.current_time(), simulator2.current_time());
-        assert_eq!(simulator1.node().active_servers, simulator2.node().active_servers);
-        assert_eq!(simulator1.node().buffer_size, simulator2.node().buffer_size);
+        assert_eq!(simulator1.node().active_servers(), simulator2.node().active_servers());
+        assert_eq!(simulator1.node().buffer.len(), simulator2.node().buffer.len());
     }
 }

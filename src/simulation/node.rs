@@ -1,16 +1,21 @@
+use std::collections::VecDeque;
+
+use crate::simulation::{events::Event, packet::Packet};
+
 pub enum ArrivalResult {
-    Served,
+    Served(Packet),
     Queued,
     Blocked,
 }
 
 pub enum DepartureResult {
-    ServerContinuedProcessing,
+    ServerContinuedProcessing(Packet),
     ServerBecameIdle,
 }
 
+
 pub struct Node {
-    buffer_size: usize,
+    buffer: VecDeque<Packet>,
     active_servers: usize,
     total_servers: usize,
 }
@@ -18,10 +23,18 @@ pub struct Node {
 impl Node {
     pub fn new(c: usize) -> Self {
         Node {
-            buffer_size: 0,
+            buffer: VecDeque::new(),
             active_servers: 0,
             total_servers: c,
         }
+    }
+
+    pub fn active_servers(&self) -> usize {
+        self.active_servers
+    }
+
+    pub fn total_servers(&self) -> usize {
+        self.total_servers
     }
 
     #[inline]
@@ -31,26 +44,27 @@ impl Node {
 
     #[inline]
     fn is_buffer_empty(&self) -> bool {
-        self.buffer_size == 0
+        self.buffer.len() == 0
     }
 
     #[inline]
     fn total_packets_number(&self) -> usize {
-        self.active_servers + self.buffer_size
+        self.active_servers + self.buffer.len()
     }
 
     /// Processes arrival events.
     /// 
     /// Checks if there's at least one server available. If so, serves the packet immediately, 
     /// otherwise queues it if the buffer size allows it.
-    pub fn process_arrival(&mut self) -> ArrivalResult {
+    pub fn process_arrival(&mut self, event: &Event) -> ArrivalResult {
+        let mut packet: Packet = Packet::new(event.time);
+
         if self.is_a_server_available() {
             self.active_servers += 1;
-            
-            ArrivalResult::Served
+            packet.set_start_service_time(event.time);
+            ArrivalResult::Served(packet)
         } else {
-            self.buffer_size += 1;
-
+            self.buffer.push_back(packet);
             ArrivalResult::Queued
         }
     }
@@ -59,13 +73,10 @@ impl Node {
     /// 
     /// Checks if the buffer has some packets. If so, processes it immediately, without letting the server go idle
     pub fn process_departure(&mut self) -> DepartureResult {
-        if !self.is_buffer_empty() {
-            self.buffer_size -= 1;
-
-            DepartureResult::ServerContinuedProcessing
+        if let Some(packet) = self.buffer.pop_front() {
+            DepartureResult::ServerContinuedProcessing(packet)
         } else {
             self.active_servers -= 1;
-            
             DepartureResult::ServerBecameIdle
         }
     }

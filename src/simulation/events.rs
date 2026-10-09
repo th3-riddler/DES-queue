@@ -1,11 +1,13 @@
+use crate::simulation::packet::Packet;
+
 pub enum EventType {
     Arrival,
-    Departure
+    Departure(Packet)
 }
 
 pub struct Event {
     pub time: f64,
-    pub event_type: EventType
+    pub event_type: EventType,
 }
 
 impl Ord for Event {
