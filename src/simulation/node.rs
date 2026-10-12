@@ -13,7 +13,6 @@ pub enum DepartureResult {
     ServerBecameIdle,
 }
 
-
 pub struct Node {
     buffer: VecDeque<Packet>,
     active_servers: usize,
@@ -29,13 +28,9 @@ impl Node {
         }
     }
 
-    pub fn active_servers(&self) -> usize {
-        self.active_servers
-    }
-
-    pub fn total_servers(&self) -> usize {
-        self.total_servers
-    }
+    pub fn _buffer(&self) -> &VecDeque<Packet> { &self.buffer }
+    pub fn _active_servers(&self) -> usize { self.active_servers }
+    pub fn _total_servers(&self) -> usize { self.total_servers }
 
     #[inline]
     fn is_a_server_available(&self) -> bool {

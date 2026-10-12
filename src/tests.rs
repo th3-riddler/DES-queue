@@ -4,39 +4,39 @@ mod tests {
 
     #[test]
     fn simulation_stays_within_max_time() {
-        let mut node = Node::new(1);
-        let mut simulator = Simulator::new(&mut node, 5.0);
+        let node = Node::new(1);
+        let mut simulator = Simulator::new(node, 8.0, 9.0).expect("Failed to create simulator");
 
         simulator.run(10.0);
 
-        println!("{}", simulator.current_time());
-        assert!(simulator.current_time() <= 10.0);
+        println!("{}", simulator._current_time());
+        assert!(simulator._current_time() <= 10.0);
     }
 
     #[test]
     fn simulation_preserves_server_invariant() {
-        let mut node = Node::new(2);
-        let mut simulator = Simulator::new(&mut node, 5.0);
+        let node = Node::new(2);
+        let mut simulator = Simulator::new(node, 8.0, 9.0).expect("Failed to create simulator");
 
         simulator.run(10.0);
 
-        assert!(simulator.node().active_servers() <= simulator.node().total_servers());
-        assert_eq!(simulator.node().buffer.len(), 0);
+        assert!(simulator._node()._active_servers() <= simulator._node()._total_servers());
+        assert_eq!(simulator._node()._buffer().len(), 0);
     }
 
     #[test]
     fn same_seed_is_reproducible() {
-        let mut node1 = Node::new(1);
-        let mut node2 = Node::new(1);
+        let node1 = Node::new(1);
+        let node2 = Node::new(1);
 
-        let mut simulator1 = Simulator::new(&mut node1, 5.0);
-        let mut simulator2 = Simulator::new(&mut node2, 5.0);
+        let mut simulator1 = Simulator::new(node1, 8.0, 9.0).expect("Failed to create simulator");
+        let mut simulator2 = Simulator::new(node2, 8.0, 9.0).expect("Failed to create simulator");
 
         simulator1.run(10.0);
         simulator2.run(10.0);
 
-        assert_eq!(simulator1.current_time(), simulator2.current_time());
-        assert_eq!(simulator1.node().active_servers(), simulator2.node().active_servers());
-        assert_eq!(simulator1.node().buffer.len(), simulator2.node().buffer.len());
+        assert_eq!(simulator1._current_time(), simulator2._current_time());
+        assert_eq!(simulator1._node()._active_servers(), simulator2._node()._active_servers());
+        assert_eq!(simulator1._node()._buffer().len(), simulator2._node()._buffer().len());
     }
 }

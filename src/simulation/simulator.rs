@@ -5,16 +5,16 @@ use crate::simulation::{events::{Event, EventType}, node::{ArrivalResult, Depart
 
 pub const SEED: u32 = 42;
 
-pub struct Simulator<'a> {
+pub struct Simulator {
     current_time: f64,
     event_queue: BinaryHeap<Event>,
-    node: &'a mut Node,
+    node: Node,
     interarrival: Exponential,
     service: Exponential,
 }
 
-impl<'a> Simulator<'a> {
-    pub fn new(node: &'a mut Node, lambda: f64, mu: f64) -> Result<Self, String> {
+impl Simulator {
+    pub fn new(node: Node, lambda: f64, mu: f64) -> Result<Self, String> {
         
         if lambda <= 0.0 {
             return Err("lambda must be a positive value".to_string());
@@ -45,7 +45,7 @@ impl<'a> Simulator<'a> {
 
     pub fn _current_time(&self) -> f64 { self.current_time }
     pub fn _event_queue(&self) -> &BinaryHeap<Event> { &self.event_queue }
-    pub fn _node(&self) -> &Node { self.node }
+    pub fn _node(&self) -> &Node { &self.node }
 
     #[inline]
     fn schedule_arrival(&mut self, arrival_time: f64) {
@@ -77,6 +77,9 @@ impl<'a> Simulator<'a> {
 
     /// Handles the departure events
     fn handle_departure(&mut self, _packet: &Packet) {
+
+        // TODO
+        // Handle statistics collection
 
         match self.node.process_departure() {
             // If the server continued processing after the departure, computes the departure time of the packet that just entered
