@@ -3,14 +3,12 @@ mod statistics;
 mod utils;
 // mod tests;
 
-use crate::simulation::{node::Node, simulator::Simulator};
+use crate::simulation::simulator::start_simulation;
 
 const LAMBDA: f64 = 8.0;
 const MU: f64 = 9.0;
+const C: usize = 1;
 
 fn main() {
-    let node: Node = Node::new(1);
-    let mut simulator: Simulator = Simulator::new(node, LAMBDA, MU).expect("Failed to create simulator");
-
-    simulator.run(10.0);
+    let _receiver = start_simulation(LAMBDA, MU, C);
 }

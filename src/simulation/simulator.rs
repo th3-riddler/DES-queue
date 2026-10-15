@@ -1,7 +1,7 @@
-use std::collections::BinaryHeap;
+use std::{collections::BinaryHeap, sync::mpsc::{self, Receiver}, thread, time::Duration};
 use rand_simple::Exponential;
 
-use crate::simulation::{events::{Event, EventType}, node::{ArrivalResult, DepartureResult, Node}, packet::Packet};
+use crate::{simulation::{events::{Event, EventType}, node::{ArrivalResult, DepartureResult, Node}, packet::Packet}, statistics::collector::{EventCounter, StatisticsSample}};
 
 pub const SEED: u32 = 42;
 
@@ -9,6 +9,8 @@ pub struct Simulator {
     current_time: f64,
     event_queue: BinaryHeap<Event>,
     node: Node,
+    counter: EventCounter,
+
     interarrival: Exponential,
     service: Exponential,
 }
@@ -37,6 +39,7 @@ impl Simulator {
                 current_time: 0.0,
                 event_queue: BinaryHeap::new(),
                 node,
+                counter: EventCounter::new(),
                 interarrival,
                 service
             }
@@ -102,25 +105,41 @@ impl Simulator {
         self.service.sample()
     }
 
-    pub fn run(&mut self, max_time: f64) {
-        // Schedules the first arrival
-        let first_arrival_time: f64 = self.sample_interarrival_time();
+    pub fn step(&mut self) ->Option<f64> {
+        let event = self.event_queue.pop()?;
+            
+        self.current_time = event.time;
 
-        if first_arrival_time <= max_time {
-            self.schedule_arrival(first_arrival_time);
+        match event.event_type {
+            EventType::Arrival => self.handle_arrival(&event),
+            EventType::Departure(packet) => self.handle_departure(&packet)
         }
 
-        while let Some(event) = self.event_queue.pop() {
-            if event.time > max_time {
+        // Some(self.counter.update(self.node._buffer().len(), self.node._active_servers()))
+        Some(12.0)
+    }
+}
+
+pub fn start_simulation(lambda: f64, mu: f64, c: usize) -> Receiver<f64> {
+    let (sender, receiver) = mpsc::channel();
+
+    thread::spawn(move || {
+        let node = Node::new(c);
+        let mut simulator = Simulator::new(node, lambda, mu).expect("Failed to create simulator");
+
+        // Schedules the first arrival
+        let first_arrival_time: f64 = simulator.sample_interarrival_time();
+        simulator.schedule_arrival(first_arrival_time);
+
+        while let Some(sample) = simulator.step() {
+            if sender.send(sample).is_err() {
                 break;
             }
 
-            self.current_time = event.time;
-
-            match event.event_type {
-                EventType::Arrival => self.handle_arrival(&event),
-                EventType::Departure(packet) => self.handle_departure(&packet)
-            }
+            // Slows the visualization
+            thread::sleep(Duration::from_millis(10));
         }
-    }
+    });
+
+    receiver
 }
