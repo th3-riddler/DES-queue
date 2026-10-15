@@ -80,10 +80,6 @@ impl Simulator {
 
     /// Handles the departure events
     fn handle_departure(&mut self, _packet: &Packet) {
-
-        // TODO
-        // Handle statistics collection
-
         match self.node.process_departure() {
             // If the server continued processing after the departure, computes the departure time of the packet that just entered
             DepartureResult::ServerContinuedProcessing(mut next_packet) => {
@@ -105,22 +101,21 @@ impl Simulator {
         self.service.sample()
     }
 
-    pub fn step(&mut self) ->Option<f64> {
+    pub fn step(&mut self) ->Option<StatisticsSample> {
         let event = self.event_queue.pop()?;
             
         self.current_time = event.time;
 
         match event.event_type {
             EventType::Arrival => self.handle_arrival(&event),
-            EventType::Departure(packet) => self.handle_departure(&packet)
+            EventType::Departure(ref packet) => self.handle_departure(packet)
         }
 
-        // Some(self.counter.update(self.node._buffer().len(), self.node._active_servers()))
-        Some(12.0)
+        Some(self.counter.update(self.node._buffer().len(), self.node._active_servers(), event.event_type))
     }
 }
 
-pub fn start_simulation(lambda: f64, mu: f64, c: usize) -> Receiver<f64> {
+pub fn start_simulation(lambda: f64, mu: f64, c: usize) -> Receiver<StatisticsSample> {
     let (sender, receiver) = mpsc::channel();
 
     thread::spawn(move || {

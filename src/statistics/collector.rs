@@ -17,8 +17,8 @@ pub struct StatisticsSample {
     l_x: f64,
     l_s: f64,
 
-    w_q: f64,
-    w_s: f64,
+    w_q: Option<f64>,
+    w_s: Option<f64>,
 }
 
 impl EventCounter {
@@ -36,28 +36,34 @@ impl EventCounter {
 
     pub fn update(
         &mut self,
-        packet: Packet,
         queue_length: usize,
         active_servers: usize,
         event_type: EventType,
     ) -> StatisticsSample {
         self.event_count += 1;
 
+        let w_q: Option<f64>;
+        let w_s: Option<f64>;
+
         match event_type {
             EventType::Arrival => {
                 self.total_queued_packets += 1;
+                w_q = None;
+                w_s = None;
             }
-            EventType::Departure(p) => {
+            EventType::Departure(packet) => {
                 self.total_served_packets += 1;
+                w_q = Some(self.compute_w_q(&packet));
+                w_s = Some(self.compute_w_s(&packet));
             }
-        };
-
+        }
+        
         StatisticsSample {
             l_q: self.compute_l_q(),
-            l_x: self.compute_l_q(),
+            l_x: self.compute_l_x(),
             l_s: self.compute_l_s(queue_length + active_servers),
-            w_q: self.compute_w_q(&packet),
-            w_s: self.compute_w_s(&packet),
+            w_q,
+            w_s,
         }
     }
 
