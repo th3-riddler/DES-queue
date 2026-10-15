@@ -9,7 +9,7 @@ impl Packet {
         Packet {
             arrival_time: Some(arrival_time),
             start_service_time: None,
-            departure_time: None
+            departure_time: None,
         }
     }
 
@@ -23,5 +23,17 @@ impl Packet {
 
     pub fn set_departure_time(&mut self, departure_time: f64) {
         self.departure_time = Some(departure_time);
+    }
+
+    pub fn get_arrival_time(&self) -> Option<f64> {
+        self.arrival_time
+    }
+
+    pub fn get_start_service_time(&self) -> Option<f64> {
+        self.start_service_time
+    }
+
+    pub fn get_departure_time(&self) -> Option<f64> {
+        self.departure_time
     }
 }

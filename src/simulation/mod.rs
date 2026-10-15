@@ -1,4 +1,4 @@
-pub mod simulator;
+pub mod events;
 pub mod node;
-mod events;
-mod packet;
+pub mod packet;
+pub mod simulator;
