@@ -1,8 +1,3 @@
-#[derive(Debug, PartialEq, Eq)]
-pub enum FactorialError {
-    Overflow,
-}
-
 // Stable version of b-erlang function:
 // B(0, A) = 1
 // B(k, A) = A * B(k - 1, A) / (k + A * B(k - 1, A))
@@ -34,7 +29,7 @@ pub fn erlang_c(c: usize, a: f64) -> f64 {
 
 // Compute L_q
 #[inline]
-pub fn compute_l_q(lambda: f64, mu: f64, c: usize) -> f64 {
+pub fn l_q(lambda: f64, mu: f64, c: usize) -> f64 {
     let rho = lambda / (mu * c as f64);
 
     erlang_c(c, c as f64 * rho) * (rho / (1.0 - rho))
@@ -42,7 +37,7 @@ pub fn compute_l_q(lambda: f64, mu: f64, c: usize) -> f64 {
 
 // Compute L_x
 #[inline]
-pub fn compute_l_x(lambda: f64, mu: f64, c: usize) -> f64 {
+pub fn l_x(lambda: f64, mu: f64, c: usize) -> f64 {
     let rho = lambda / (mu * c as f64);
 
     c as f64 * rho
@@ -50,13 +45,13 @@ pub fn compute_l_x(lambda: f64, mu: f64, c: usize) -> f64 {
 
 // Compute L_s
 #[inline]
-pub fn compute_l_s(lambda: f64, mu: f64, c: usize) -> f64 {
-    compute_l_q(lambda, mu, c) + compute_l_x(lambda, mu, c)
+pub fn l_s(lambda: f64, mu: f64, c: usize) -> f64 {
+    l_q(lambda, mu, c) + l_x(lambda, mu, c)
 }
 
 // Compute W_q
 #[inline]
-pub fn compute_w_q(lambda: f64, mu: f64, c: usize) -> f64 {
+pub fn w_q(lambda: f64, mu: f64, c: usize) -> f64 {
     let mu_tot: f64 = c as f64 * mu;
     let rho: f64 = lambda / mu_tot;
 
@@ -65,7 +60,7 @@ pub fn compute_w_q(lambda: f64, mu: f64, c: usize) -> f64 {
 
 // Compute W_s
 #[inline]
-pub fn compute_w_s(lambda: f64, mu: f64, c: usize) -> f64 {
+pub fn w_s(lambda: f64, mu: f64, c: usize) -> f64 {
     let mu_tot = c as f64 * mu;
     let rho = lambda / mu_tot;
 

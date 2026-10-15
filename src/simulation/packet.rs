@@ -1,7 +1,4 @@
-use uid::Id;
-
 pub struct Packet {
-    id: Id<usize>,
     arrival_time: Option<f64>,
     start_service_time: Option<f64>,
     departure_time: Option<f64>,
@@ -10,15 +7,10 @@ pub struct Packet {
 impl Packet {
     pub fn new(arrival_time: f64) -> Self {
         Packet {
-            id: Id::new(),
             arrival_time: Some(arrival_time),
             start_service_time: None,
             departure_time: None
         }
-    }
-
-    pub fn id(&self) -> Id<usize> {
-        self.id
     }
 
     pub fn set_arrival_time(&mut self, arrival_time: f64) {

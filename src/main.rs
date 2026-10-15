@@ -1,5 +1,6 @@
 mod simulation;
 mod statistics;
+mod utils;
 // mod tests;
 
 use crate::simulation::{node::Node, simulator::Simulator};

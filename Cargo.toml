@@ -5,4 +5,3 @@ edition = "2024"
 
 [dependencies]
 rand_simple = "0.2.39"
-uid = "0.1.9"

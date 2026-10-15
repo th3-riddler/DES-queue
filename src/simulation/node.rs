@@ -5,7 +5,6 @@ use crate::simulation::{events::Event, packet::Packet};
 pub enum ArrivalResult {
     Served(Packet),
     Queued,
-    Blocked,
 }
 
 pub enum DepartureResult {
