@@ -1,7 +1,19 @@
-use std::{collections::BinaryHeap, sync::mpsc::{self, Receiver}, thread, time::Duration};
 use rand_simple::Exponential;
+use std::{
+    collections::BinaryHeap,
+    sync::mpsc::{self, Receiver},
+    thread,
+    time::Duration,
+};
 
-use crate::{simulation::{events::{Event, EventType}, node::{ArrivalResult, DepartureResult, Node}, packet::Packet}, statistics::collector::{EventCounter, StatisticsSample}};
+use crate::{
+    simulation::{
+        events::{Event, EventType},
+        node::{ArrivalResult, DepartureResult, Node},
+        packet::Packet,
+    },
+    statistics::collector::{EventCounter, StatisticsSample},
+};
 
 pub const SEED: u32 = 42;
 
@@ -17,7 +29,6 @@ pub struct Simulator {
 
 impl Simulator {
     pub fn new(node: Node, lambda: f64, mu: f64) -> Result<Self, String> {
-        
         if lambda <= 0.0 {
             return Err("lambda must be a positive value".to_string());
         }
@@ -29,36 +40,50 @@ impl Simulator {
         }
 
         let mut interarrival: Exponential = Exponential::new(SEED);
-        interarrival.try_set_params(1.0 / lambda).expect("lambda must be a positive value");
+        interarrival
+            .try_set_params(1.0 / lambda)
+            .expect("lambda must be a positive value");
 
         let mut service: Exponential = Exponential::new(SEED);
-        service.try_set_params(1.0 / mu).expect("mu must be a positive value");
+        service
+            .try_set_params(1.0 / mu)
+            .expect("mu must be a positive value");
 
-        Ok(
-            Simulator {
-                current_time: 0.0,
-                event_queue: BinaryHeap::new(),
-                node,
-                counter: EventCounter::new(),
-                interarrival,
-                service
-            }
-        )
+        Ok(Simulator {
+            current_time: 0.0,
+            event_queue: BinaryHeap::new(),
+            node,
+            counter: EventCounter::new(),
+            interarrival,
+            service,
+        })
     }
 
-    pub fn _current_time(&self) -> f64 { self.current_time }
-    pub fn _event_queue(&self) -> &BinaryHeap<Event> { &self.event_queue }
-    pub fn _node(&self) -> &Node { &self.node }
+    pub fn _current_time(&self) -> f64 {
+        self.current_time
+    }
+    pub fn _event_queue(&self) -> &BinaryHeap<Event> {
+        &self.event_queue
+    }
+    pub fn _node(&self) -> &Node {
+        &self.node
+    }
 
     #[inline]
     fn schedule_arrival(&mut self, arrival_time: f64) {
-        let event: Event = Event { time: arrival_time, event_type: EventType::Arrival };
+        let event: Event = Event {
+            time: arrival_time,
+            event_type: EventType::Arrival,
+        };
         self.event_queue.push(event);
     }
 
     #[inline]
     fn schedule_departure(&mut self, departure_time: f64, packet: Packet) {
-        let event: Event = Event { time: departure_time, event_type: EventType::Departure(packet) };
+        let event: Event = Event {
+            time: departure_time,
+            event_type: EventType::Departure(packet),
+        };
         self.event_queue.push(event);
     }
 
@@ -73,8 +98,8 @@ impl Simulator {
                 let departure_time: f64 = self.current_time + self.sample_service_time();
                 packet.set_departure_time(departure_time);
                 self.schedule_departure(departure_time, packet);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
@@ -86,8 +111,8 @@ impl Simulator {
                 let departure_time: f64 = self.current_time + self.sample_service_time();
                 next_packet.set_departure_time(departure_time);
                 self.schedule_departure(departure_time, next_packet);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
@@ -101,17 +126,24 @@ impl Simulator {
         self.service.sample()
     }
 
-    pub fn step(&mut self) ->Option<StatisticsSample> {
+    pub fn step(&mut self) -> Option<StatisticsSample> {
         let event = self.event_queue.pop()?;
-            
+
+        let statistics: StatisticsSample = self.counter.update(
+            event.time,
+            self.node._buffer().len(),
+            self.node._active_servers(),
+            event.event_type,
+        );
+
         self.current_time = event.time;
 
         match event.event_type {
             EventType::Arrival => self.handle_arrival(&event),
-            EventType::Departure(ref packet) => self.handle_departure(packet)
+            EventType::Departure(ref packet) => self.handle_departure(packet),
         }
 
-        Some(self.counter.update(self.node._buffer().len(), self.node._active_servers(), event.event_type))
+        Some(statistics)
     }
 }
 

@@ -1,7 +1,8 @@
+use std::collections::Vec;
 use crate::simulation::{events::EventType, packet::Packet};
 
 pub struct EventCounter {
-    simulation_time: f64,
+    number_in_system: Vec<f64>,
     total_queued_packets: usize,
     total_served_packets: usize,
 
@@ -13,6 +14,7 @@ pub struct EventCounter {
 }
 
 pub struct StatisticsSample {
+    p_k: f64,
     l_q: f64,
     l_x: f64,
     l_s: f64,
@@ -24,7 +26,7 @@ pub struct StatisticsSample {
 impl EventCounter {
     pub fn new() -> Self {
         EventCounter {
-            simulation_time: 0.0,
+            number_in_system: Vec::with_capacity(24),
             total_queued_packets: 0,
             total_served_packets: 0,
             event_count: 0,
@@ -36,6 +38,7 @@ impl EventCounter {
 
     pub fn update(
         &mut self,
+        event_time: usize,
         queue_length: usize,
         active_servers: usize,
         event_type: EventType,
@@ -57,14 +60,20 @@ impl EventCounter {
                 w_s = Some(self.compute_w_s(&packet));
             }
         }
-        
+
         StatisticsSample {
+            p_k: self.compute_p_k(event_time),
             l_q: self.compute_l_q(),
             l_x: self.compute_l_x(),
             l_s: self.compute_l_s(queue_length + active_servers),
             w_q,
             w_s,
         }
+    }
+
+    #[inline]
+    fn compute_p_k(&mut self, event_time: usize) -> Vec< {
+        for i in 0..(self.number_in_system.length)
     }
 
     #[inline]
