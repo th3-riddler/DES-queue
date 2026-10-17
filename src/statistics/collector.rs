@@ -4,7 +4,7 @@ use std::vec::Vec;
 const DEFAULT_VEC_SIZE: usize = 24;
 
 pub struct EventCounter {
-    number_in_system: Vec<f64>,
+    number_in_system: [f64; DEFAULT_VEC_SIZE],
     total_event_time: f64,
 
     total_queued_packets: usize,
@@ -18,19 +18,19 @@ pub struct EventCounter {
 }
 
 pub struct StatisticsSample {
-    p_k: Vec<f64>,
-    l_q: f64,
-    l_x: f64,
-    l_s: f64,
+    pub p_k: [f64; DEFAULT_VEC_SIZE],
+    pub l_q: f64,
+    pub l_x: f64,
+    pub l_s: f64,
 
-    w_q: Option<f64>,
-    w_s: Option<f64>,
+    pub w_q: Option<f64>,
+    pub w_s: Option<f64>,
 }
 
 impl EventCounter {
     pub fn new() -> Self {
         EventCounter {
-            number_in_system: Vec::with_capacity(DEFAULT_VEC_SIZE),
+            number_in_system: [0.0; DEFAULT_VEC_SIZE],
             total_event_time: 0.0,
             total_queued_packets: 0,
             total_served_packets: 0,
@@ -83,16 +83,13 @@ impl EventCounter {
     }
 
     #[inline]
-    fn compute_p_k(&mut self, event_time: f64, total_packets: usize) -> Vec<f64> {
-        self.number_in_system[total_packets] += event_time;
-
-        let mut p_k_values = Vec::with_capacity(DEFAULT_VEC_SIZE);
-
-        for i in 0..DEFAULT_VEC_SIZE {
-            p_k_values[i] = self.number_in_system[i] / self.total_event_time;
+    fn compute_p_k(&mut self, event_time: f64, total_packets: usize) -> [f64; DEFAULT_VEC_SIZE] {
+        if total_packets < DEFAULT_VEC_SIZE {
+            self.number_in_system[total_packets] += event_time;
         }
 
-        p_k_values
+        self.number_in_system
+            .map(|time| time / self.total_event_time)
     }
 
     #[inline]

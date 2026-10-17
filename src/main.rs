@@ -1,3 +1,4 @@
+mod plots;
 mod simulation;
 mod statistics;
 mod utils;
@@ -13,4 +14,5 @@ const C: usize = 1;
 
 fn main() {
     let receiver: Receiver<StatisticsSample> = start_simulation(LAMBDA, MU, C);
+    let _ = plots::plots::make_plots(receiver);
 }
