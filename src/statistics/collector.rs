@@ -21,9 +21,8 @@ pub struct StatisticsSample {
     pub l_q: f64,
     pub l_x: f64,
     pub l_s: f64,
-
-    pub w_q: Option<f64>,
-    pub w_s: Option<f64>,
+    pub w_q: f64,
+    pub w_s: f64,
 }
 
 impl EventCounter {
@@ -50,19 +49,19 @@ impl EventCounter {
         self.event_count += 1;
         self.total_event_time += dt;
 
-        let w_q: Option<f64>;
-        let w_s: Option<f64>;
+        let w_q: f64;
+        let w_s: f64;
 
         match event_type {
             EventType::Arrival => {
                 self.total_queued_packets += 1;
-                w_q = None;
-                w_s = None;
+                w_q = self.temp_wq;
+                w_s = self.temp_ws;
             }
             EventType::Departure(packet) => {
                 self.total_served_packets += 1;
-                w_q = Some(self.compute_w_q(&packet));
-                w_s = Some(self.compute_w_s(&packet));
+                w_q = self.compute_w_q(&packet);
+                w_s = self.compute_w_s(&packet);
             }
         }
         let p_k: [f64; DEFAULT_VEC_SIZE] = self.compute_p_k(dt, queue_length + active_servers);

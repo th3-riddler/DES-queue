@@ -13,7 +13,7 @@ impl Packet {
         }
     }
 
-    pub fn set_arrival_time(&mut self, arrival_time: f64) {
+    pub fn _set_arrival_time(&mut self, arrival_time: f64) {
         self.arrival_time = Some(arrival_time);
     }
 

@@ -1,7 +1,6 @@
-use rand_simple::Exponential;
 use std::{
     collections::BinaryHeap,
-    sync::mpsc::{self, Receiver},
+    sync::mpsc::{self, Receiver, Sender, TryRecvError},
     thread,
     time::Duration,
 };
@@ -14,6 +13,12 @@ use crate::{
     },
     statistics::collector::{EventCounter, StatisticsSample},
 };
+
+pub const FAST_FORWARD_EVENTS: usize = 200_000;
+
+pub enum SimulationCommand {
+    FastForward(usize),
+}
 
 pub struct Simulator {
     current_time: f64,
@@ -111,18 +116,40 @@ impl Simulator {
     }
 }
 
-pub fn start_simulation(lambda: f64, mu: f64, c: usize) -> Receiver<StatisticsSample> {
+pub fn start_simulation(
+    lambda: f64,
+    mu: f64,
+    c: usize,
+) -> (Receiver<StatisticsSample>, Sender<SimulationCommand>) {
     let (sender, receiver) = mpsc::channel();
+    let (command_sender, command_receiver) = mpsc::channel();
 
     thread::spawn(move || {
         let node: Node = Node::new(lambda, mu, c).expect("Failed to create Node");
         let mut simulator: Simulator = Simulator::new(node);
+        let mut fast_forward_events = 0;
 
         // Schedules the first arrival
         let first_arrival_time: f64 = simulator.node.sample_interarrival_time();
         simulator.schedule_arrival(first_arrival_time);
 
         while let Some(sample) = simulator.step() {
+            if fast_forward_events > 0 {
+                fast_forward_events -= 1;
+                if fast_forward_events == 0 && sender.send(sample).is_err() {
+                    break;
+                }
+                continue;
+            }
+
+            match command_receiver.try_recv() {
+                Ok(SimulationCommand::FastForward(events)) => {
+                    fast_forward_events = events;
+                }
+                Err(TryRecvError::Disconnected) => break,
+                Err(TryRecvError::Empty) => {}
+            }
+
             if sender.send(sample).is_err() {
                 break;
             }
@@ -132,5 +159,5 @@ pub fn start_simulation(lambda: f64, mu: f64, c: usize) -> Receiver<StatisticsSa
         }
     });
 
-    receiver
+    (receiver, command_sender)
 }

@@ -3,18 +3,26 @@ use std::sync::mpsc::Receiver;
 use eframe::egui;
 use egui_plot::{Bar, BarChart, Plot};
 
-use crate::statistics::collector::StatisticsSample;
+use crate::{
+    simulation::simulator::{SimulationCommand, FAST_FORWARD_EVENTS},
+    statistics::collector::StatisticsSample,
+};
 
 pub struct DisplayPlots {
     stats: Option<StatisticsSample>,
     receiver: Receiver<StatisticsSample>,
+    command_sender: std::sync::mpsc::Sender<SimulationCommand>,
 }
 
 impl DisplayPlots {
-    pub fn new(receiver: Receiver<StatisticsSample>) -> Self {
+    pub fn new(
+        receiver: Receiver<StatisticsSample>,
+        command_sender: std::sync::mpsc::Sender<SimulationCommand>,
+    ) -> Self {
         Self {
             receiver,
             stats: None,
+            command_sender,
         }
     }
 }
@@ -37,22 +45,24 @@ impl eframe::App for DisplayPlots {
             ui.heading("Queue Simulation Stats");
             ui.separator();
 
+            if ui.button("Fast-forward 200k events").clicked() {
+                if self
+                    .command_sender
+                    .send(SimulationCommand::FastForward(FAST_FORWARD_EVENTS))
+                    .is_err()
+                {
+                    eprintln!("Unable to fast-forward: simulation has stopped");
+                }
+            }
+
             if let Some(stats) = &self.stats {
                 ui.group(|ui| {
                     ui.label(egui::RichText::new("Current Metrics").strong());
                     ui.label(format!("L_q: {:.4}", stats.l_q));
                     ui.label(format!("L_x: {:.4}", stats.l_x));
                     ui.label(format!("L_s: {:.4}", stats.l_s));
-
-                    match stats.w_q {
-                        Some(wq) => ui.label(format!("W_q: {:.4}", wq)),
-                        None => ui.label("W_q: Pending..."),
-                    };
-
-                    match stats.w_s {
-                        Some(ws) => ui.label(format!("W_s: {:.4}", ws)),
-                        None => ui.label("W_s: Pending..."),
-                    };
+                    ui.label(format!("W_q: {:.4}", stats.w_q));
+                    ui.label(format!("W_s: {:.4}", stats.w_s));
                 });
 
                 ui.add_space(10.0);
@@ -82,7 +92,10 @@ impl eframe::App for DisplayPlots {
     }
 }
 
-pub fn make_plots(receiver: Receiver<StatisticsSample>) -> eframe::Result {
+pub fn make_plots(
+    receiver: Receiver<StatisticsSample>,
+    command_sender: std::sync::mpsc::Sender<SimulationCommand>,
+) -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([900.0, 700.0])
@@ -93,6 +106,6 @@ pub fn make_plots(receiver: Receiver<StatisticsSample>) -> eframe::Result {
     eframe::run_native(
         "Simulation Stats",
         options,
-        Box::new(|_cc| Ok(Box::new(DisplayPlots::new(receiver)))),
+        Box::new(|_cc| Ok(Box::new(DisplayPlots::new(receiver, command_sender)))),
     )
 }
