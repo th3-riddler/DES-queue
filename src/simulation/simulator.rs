@@ -133,7 +133,7 @@ impl Simulator {
             event.time,
             self.node._buffer().len(),
             self.node._active_servers(),
-            event.event_type,
+            &event.event_type,
         );
 
         self.current_time = event.time;

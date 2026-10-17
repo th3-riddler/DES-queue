@@ -1,8 +1,12 @@
-use std::collections::Vec;
 use crate::simulation::{events::EventType, packet::Packet};
+use std::vec::Vec;
+
+const DEFAULT_VEC_SIZE: usize = 24;
 
 pub struct EventCounter {
     number_in_system: Vec<f64>,
+    total_event_time: f64,
+
     total_queued_packets: usize,
     total_served_packets: usize,
 
@@ -14,7 +18,7 @@ pub struct EventCounter {
 }
 
 pub struct StatisticsSample {
-    p_k: f64,
+    p_k: Vec<f64>,
     l_q: f64,
     l_x: f64,
     l_s: f64,
@@ -26,7 +30,8 @@ pub struct StatisticsSample {
 impl EventCounter {
     pub fn new() -> Self {
         EventCounter {
-            number_in_system: Vec::with_capacity(24),
+            number_in_system: Vec::with_capacity(DEFAULT_VEC_SIZE),
+            total_event_time: 0.0,
             total_queued_packets: 0,
             total_served_packets: 0,
             event_count: 0,
@@ -38,10 +43,10 @@ impl EventCounter {
 
     pub fn update(
         &mut self,
-        event_time: usize,
+        event_time: f64,
         queue_length: usize,
         active_servers: usize,
-        event_type: EventType,
+        event_type: &EventType,
     ) -> StatisticsSample {
         self.event_count += 1;
 
@@ -61,8 +66,14 @@ impl EventCounter {
             }
         }
 
+        self.total_event_time += event_time;
+        let p_k = self.compute_p_k(
+            self.total_event_time - event_time,
+            queue_length + active_servers,
+        );
+
         StatisticsSample {
-            p_k: self.compute_p_k(event_time),
+            p_k: p_k,
             l_q: self.compute_l_q(),
             l_x: self.compute_l_x(),
             l_s: self.compute_l_s(queue_length + active_servers),
@@ -72,8 +83,16 @@ impl EventCounter {
     }
 
     #[inline]
-    fn compute_p_k(&mut self, event_time: usize) -> Vec< {
-        for i in 0..(self.number_in_system.length)
+    fn compute_p_k(&mut self, event_time: f64, total_packets: usize) -> Vec<f64> {
+        self.number_in_system[total_packets] += event_time;
+
+        let p_k_values = Vec::with_capacity(DEFAULT_VEC_SIZE);
+
+        for i in 0..DEFAULT_VEC_SIZE {
+            p_k_values[i] = self.number_in_system[i] / self.total_event_time;
+        }
+
+        p_k_values
     }
 
     #[inline]
