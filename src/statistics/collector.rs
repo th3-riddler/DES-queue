@@ -65,10 +65,10 @@ impl EventCounter {
                 w_s = Some(self.compute_w_s(&packet));
             }
         }
-        let p_k = self.compute_p_k(dt, queue_length + active_servers);
+        let p_k: [f64; DEFAULT_VEC_SIZE] = self.compute_p_k(dt, queue_length + active_servers);
 
         StatisticsSample {
-            p_k: p_k,
+            p_k,
             l_q: self.compute_l_q(),
             l_x: self.compute_l_x(),
             l_s: self.compute_l_s(queue_length + active_servers),

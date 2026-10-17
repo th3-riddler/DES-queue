@@ -1,6 +1,8 @@
 use std::collections::VecDeque;
-
+use rand_simple::Exponential;
 use crate::simulation::{events::Event, packet::Packet};
+
+pub const SEED: u32 = 42;
 
 pub enum ArrivalResult {
     Served(Packet),
@@ -16,15 +18,46 @@ pub struct Node {
     buffer: VecDeque<Packet>,
     active_servers: usize,
     total_servers: usize,
+
+    interarrival: Exponential,
+    service: Exponential,
 }
 
 impl Node {
-    pub fn new(c: usize) -> Self {
-        Node {
+    pub fn new(lambda: f64, mu: f64, c: usize) -> Result<Self, String> {
+        if lambda <= 0.0 {
+            return Err("lambda must be a positive value".to_string());
+        }
+        if mu <= 0.0 {
+            return Err("mu must be a positive value".to_string());
+        }
+        if c <= 0 {
+            return Err("c must be a positive value".to_string());
+        }
+
+        let rho: f64 = lambda / (c as f64 * mu);
+        if rho > 1.0 {
+            return Err("rho must be positive and less than 1.0".to_string());
+        }
+
+        let mut interarrival: Exponential = Exponential::new(SEED);
+        interarrival
+            .try_set_params(1.0 / lambda)
+            .expect("lambda must be a positive value");
+
+        let mut service: Exponential = Exponential::new(SEED);
+        service
+            .try_set_params(1.0 / mu)
+            .expect("mu must be a positive value");
+        
+        Ok(Node {
             buffer: VecDeque::new(),
             active_servers: 0,
             total_servers: c,
-        }
+
+            interarrival,
+            service
+        })
     }
 
     pub fn _buffer(&self) -> &VecDeque<Packet> { &self.buffer }
@@ -44,6 +77,16 @@ impl Node {
     #[inline]
     fn total_packets_number(&self) -> usize {
         self.active_servers + self.buffer.len()
+    }
+
+    #[inline]
+    pub fn sample_interarrival_time(&mut self) -> f64 {
+        self.interarrival.sample()
+    }
+
+    #[inline]
+    pub fn sample_service_time(&mut self) -> f64 {
+        self.service.sample()
     }
 
     /// Processes arrival events.
