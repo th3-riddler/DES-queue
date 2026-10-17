@@ -86,7 +86,7 @@ impl EventCounter {
     fn compute_p_k(&mut self, event_time: f64, total_packets: usize) -> Vec<f64> {
         self.number_in_system[total_packets] += event_time;
 
-        let p_k_values = Vec::with_capacity(DEFAULT_VEC_SIZE);
+        let mut p_k_values = Vec::with_capacity(DEFAULT_VEC_SIZE);
 
         for i in 0..DEFAULT_VEC_SIZE {
             p_k_values[i] = self.number_in_system[i] / self.total_event_time;
