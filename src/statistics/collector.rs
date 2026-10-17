@@ -1,5 +1,4 @@
 use crate::simulation::{events::EventType, packet::Packet};
-use std::vec::Vec;
 
 const DEFAULT_VEC_SIZE: usize = 24;
 
@@ -43,12 +42,13 @@ impl EventCounter {
 
     pub fn update(
         &mut self,
-        event_time: f64,
+        dt: f64,
         queue_length: usize,
         active_servers: usize,
         event_type: &EventType,
     ) -> StatisticsSample {
         self.event_count += 1;
+        self.total_event_time += dt;
 
         let w_q: Option<f64>;
         let w_s: Option<f64>;
@@ -65,12 +65,7 @@ impl EventCounter {
                 w_s = Some(self.compute_w_s(&packet));
             }
         }
-
-        self.total_event_time += event_time;
-        let p_k = self.compute_p_k(
-            self.total_event_time - event_time,
-            queue_length + active_servers,
-        );
+        let p_k = self.compute_p_k(dt, queue_length + active_servers);
 
         StatisticsSample {
             p_k: p_k,
@@ -83,9 +78,9 @@ impl EventCounter {
     }
 
     #[inline]
-    fn compute_p_k(&mut self, event_time: f64, total_packets: usize) -> [f64; DEFAULT_VEC_SIZE] {
+    fn compute_p_k(&mut self, dt: f64, total_packets: usize) -> [f64; DEFAULT_VEC_SIZE] {
         if total_packets < DEFAULT_VEC_SIZE {
-            self.number_in_system[total_packets] += event_time;
+            self.number_in_system[total_packets] += dt;
         }
 
         self.number_in_system

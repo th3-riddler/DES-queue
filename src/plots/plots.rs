@@ -69,7 +69,7 @@ impl eframe::App for DisplayPlots {
                 let chart = BarChart::new("p_k", bars).width(0.7);
 
                 Plot::new("p_k_plot")
-                    .view_aspect(2.5)
+                    .height(ui.available_height())
                     .include_y(0.0)
                     .include_x(0.0)
                     .show(ui, |plot_ui| {
@@ -85,7 +85,7 @@ impl eframe::App for DisplayPlots {
 pub fn make_plots(receiver: Receiver<StatisticsSample>) -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([900.0, 500.0])
+            .with_inner_size([900.0, 700.0])
             .with_title("Simulation Stats"),
         ..Default::default()
     };
@@ -96,4 +96,3 @@ pub fn make_plots(receiver: Receiver<StatisticsSample>) -> eframe::Result {
         Box::new(|_cc| Ok(Box::new(DisplayPlots::new(receiver)))),
     )
 }
-

@@ -129,14 +129,15 @@ impl Simulator {
     pub fn step(&mut self) -> Option<StatisticsSample> {
         let event = self.event_queue.pop()?;
 
+        let dt = event.time - self.current_time;
+        self.current_time = event.time;
+
         let statistics: StatisticsSample = self.counter.update(
-            event.time,
+            dt,
             self.node._buffer().len(),
             self.node._active_servers(),
             &event.event_type,
         );
-
-        self.current_time = event.time;
 
         match event.event_type {
             EventType::Arrival => self.handle_arrival(&event),
