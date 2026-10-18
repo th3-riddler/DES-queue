@@ -14,7 +14,7 @@ use crate::{
     statistics::collector::{EventCounter, StatisticsSample},
 };
 
-pub const FAST_FORWARD_EVENTS: usize = 2_000_000;
+pub const FAST_FORWARD_EVENTS: usize = 200_000;
 
 pub enum SimulationCommand {
     FastForward(usize),
