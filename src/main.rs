@@ -10,7 +10,7 @@ use crate::{
 
 const LAMBDA: f64 = 8.0;
 const MU: f64 = 9.0;
-const C: usize = 6;
+const C: usize = 1;
 
 fn main() {
     let (receiver, command_sender) = start_simulation(LAMBDA, MU, C);

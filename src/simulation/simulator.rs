@@ -14,7 +14,7 @@ use crate::{
     statistics::collector::{EventCounter, StatisticsSample},
 };
 
-pub const FAST_FORWARD_EVENTS: usize = 200_000;
+pub const FAST_FORWARD_EVENTS: usize = 2_000_000;
 
 pub enum SimulationCommand {
     FastForward(usize),
@@ -71,21 +71,28 @@ impl Simulator {
         let next_arrival_time: f64 = self.current_time + self.node.sample_interarrival_time();
         self.schedule_arrival(next_arrival_time);
 
+        self.counter.total_packets += 1;
         match self.node.process_arrival(event) {
             ArrivalResult::Served(mut packet) => {
                 let departure_time: f64 = self.current_time + self.node.sample_service_time();
                 packet.set_departure_time(departure_time);
                 self.schedule_departure(departure_time, packet);
             }
-            _ => {}
+            ArrivalResult::Queued => {
+                self.counter.total_queued_packets += 1;
+            }
         }
     }
 
     /// Handles the departure events
-    fn handle_departure(&mut self, _packet: &Packet) {
+    fn handle_departure(&mut self, event: &Event) {
+        self.counter.total_served_packets += 1;
+
         match self.node.process_departure() {
             // If the server continued processing after the departure, computes the departure time of the packet that just entered
             DepartureResult::ServerContinuedProcessing(mut next_packet) => {
+                next_packet.set_start_service_time(event.time);
+
                 let departure_time: f64 = self.current_time + self.node.sample_service_time();
                 next_packet.set_departure_time(departure_time);
                 self.schedule_departure(departure_time, next_packet);
@@ -106,10 +113,10 @@ impl Simulator {
             self.node._active_servers(),
             &event.event_type,
         );
-
+        
         match event.event_type {
             EventType::Arrival => self.handle_arrival(&event),
-            EventType::Departure(ref packet) => self.handle_departure(packet),
+            EventType::Departure(_) => self.handle_departure(&event),
         }
 
         Some(statistics)

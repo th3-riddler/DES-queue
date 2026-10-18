@@ -2,7 +2,8 @@ use std::collections::VecDeque;
 use rand_simple::Exponential;
 use crate::simulation::{events::Event, packet::Packet};
 
-pub const SEED: u32 = 42;
+pub const ARRIVAL_SEED: u32 = 42;
+pub const SERVICE_SEED: u32 = 43;
 
 pub enum ArrivalResult {
     Served(Packet),
@@ -40,12 +41,12 @@ impl Node {
             return Err("rho must be positive and less than 1.0".to_string());
         }
 
-        let mut interarrival: Exponential = Exponential::new(SEED);
+        let mut interarrival: Exponential = Exponential::new(ARRIVAL_SEED);
         interarrival
             .try_set_params(1.0 / lambda)
             .expect("lambda must be a positive value");
 
-        let mut service: Exponential = Exponential::new(SEED);
+        let mut service: Exponential = Exponential::new(SERVICE_SEED);
         service
             .try_set_params(1.0 / mu)
             .expect("mu must be a positive value");
