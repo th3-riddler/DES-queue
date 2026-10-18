@@ -5,11 +5,11 @@ const DEFAULT_VEC_SIZE: usize = 24;
 pub struct EventCounter {
     number_in_system: [f64; DEFAULT_VEC_SIZE],
     total_event_time: f64,
-    pub total_packets: usize,
+    pub total_arrivals: usize,
+    pub total_departures: usize,
 
     pub total_queued_packets: usize,
     pub total_served_packets: usize,
-    event_count: usize,
 
     in_queue_time: f64,
     in_service_time: f64,
@@ -26,6 +26,9 @@ pub struct StatisticsSample {
     pub l_s: f64,
     pub w_q: f64,
     pub w_s: f64,
+
+    pub total_arrivals: usize,
+    pub total_departures: usize,
 }
 
 impl EventCounter {
@@ -33,10 +36,11 @@ impl EventCounter {
         EventCounter {
             number_in_system: [0.0; DEFAULT_VEC_SIZE],
             total_event_time: 0.0,
-            total_packets: 0,
+            total_arrivals: 0,
+            total_departures: 0,
+
             total_queued_packets: 0,
             total_served_packets: 0,
-            event_count: 0,
             
             in_queue_time: 0.0,
             in_service_time: 0.0,
@@ -54,7 +58,6 @@ impl EventCounter {
         active_servers: usize,
         event_type: &EventType,
     ) -> StatisticsSample {
-        self.event_count += 1;
         self.total_event_time += dt;
 
         let (w_q, w_s) = match event_type {
@@ -70,6 +73,9 @@ impl EventCounter {
             l_s: self.compute_l_s(queue_length + active_servers, self.total_event_time, dt),
             w_q,
             w_s,
+
+            total_arrivals: self.total_arrivals,
+            total_departures: self.total_departures
         }
     }
 

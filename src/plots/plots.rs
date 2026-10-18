@@ -1,12 +1,21 @@
 use std::sync::mpsc::Receiver;
 
 use eframe::egui;
-use egui_plot::{Bar, BarChart, Corner, Legend, Plot};
+use egui_plot::{Bar, BarChart, Plot};
 
 use crate::{
-    simulation::simulator::{FAST_FORWARD_EVENTS, SimulationCommand},
-    statistics::collector::StatisticsSample,
+    C, LAMBDA, MU, simulation::simulator::{FAST_FORWARD_EVENTS, SimulationCommand}, statistics::collector::StatisticsSample, utils::{l_q, l_x, l_s, w_q, w_s},
 };
+
+const ZERO_TOLERANCE: f64 = 1e-6;
+
+fn relative_error(simulated_value: f64, theory_value: f64) -> Option<f64> {
+    if theory_value.abs() <= ZERO_TOLERANCE {
+        return (simulated_value.abs() <= ZERO_TOLERANCE).then_some(0.0);
+    }
+
+    Some((simulated_value - theory_value).abs() / theory_value.abs() * 100.0)
+}
 
 pub struct DisplayPlots {
     stats: Option<StatisticsSample>,
@@ -29,7 +38,7 @@ impl DisplayPlots {
 
 impl eframe::App for DisplayPlots {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        let mut has_new_data = false;
+        let mut has_new_data: bool = false;
 
         // Save the last StatisticsSample update
         for new_stats in self.receiver.try_iter() {
@@ -69,7 +78,7 @@ impl eframe::App for DisplayPlots {
                     .inner_margin(egui::Margin::same(12))
                     .show(ui, |ui| {
                         egui::Grid::new("statistics_comparison")
-                            .num_columns(3)
+                            .num_columns(4)
                             .striped(true)
                             .min_col_width(150.0)
                             .show(ui, |ui| {
@@ -79,21 +88,51 @@ impl eframe::App for DisplayPlots {
                                         .strong()
                                         .color(ui.visuals().hyperlink_color),
                                 );
-                                ui.label(egui::RichText::new("Theory").strong().weak());
-                                ui.end_row();
 
-                                for (name, value) in [
-                                    ("L_q", stats.l_q),
-                                    ("L_x", stats.l_x),
-                                    ("L_s", stats.l_s),
-                                    ("W_q", stats.w_q),
-                                    ("W_s", stats.w_s),
+                                ui.label(egui::RichText::new("Theory").strong());
+                                ui.label(egui::RichText::new("Error").strong());
+                                ui.end_row();
+                                for (name, simulated_value, theory_value) in [
+                                    ("L_q", stats.l_q, l_q(LAMBDA, MU, C)),
+                                    ("L_x", stats.l_x, l_x(LAMBDA, MU, C)),
+                                    ("L_s", stats.l_s, l_s(LAMBDA, MU, C)),
+                                    ("W_q", stats.w_q, w_q(LAMBDA, MU, C)),
+                                    ("W_s", stats.w_s, w_s(LAMBDA, MU, C)),
                                 ] {
                                     ui.label(egui::RichText::new(name).strong());
-                                    ui.label(format!("{value:.4}"));
-                                    ui.label(egui::RichText::new("-").italics());
+                                    ui.label(format!("{simulated_value:.4}"));
+                                    ui.label(egui::RichText::new(format!("{theory_value:.4}")).italics());
+
+                                    let error: String = relative_error(simulated_value, theory_value)
+                                        .map_or_else(|| "N/A".to_string(), |value| format!("{value:.2}%"));
+                                    ui.label(egui::RichText::new(error).italics());
                                     ui.end_row();
                                 }
+
+                            });
+
+                        ui.add_space(8.0);
+                        ui.separator();
+                        ui.label(egui::RichText::new("Event totals").strong());
+                        egui::Grid::new("event_totals")
+                            .num_columns(2)
+                            .spacing([32.0, 4.0])
+                            .show(ui, |ui| {
+                                ui.label("Total arrivals");
+                                ui.label(
+                                    egui::RichText::new(stats.total_arrivals.to_string())
+                                        .strong()
+                                        .color(ui.visuals().hyperlink_color),
+                                );
+                                ui.end_row();
+
+                                ui.label("Total departures");
+                                ui.label(
+                                    egui::RichText::new(stats.total_departures.to_string())
+                                        .strong()
+                                        .color(ui.visuals().hyperlink_color),
+                                );
+                                ui.end_row();
                             });
                     });
 

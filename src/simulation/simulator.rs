@@ -71,7 +71,7 @@ impl Simulator {
         let next_arrival_time: f64 = self.current_time + self.node.sample_interarrival_time();
         self.schedule_arrival(next_arrival_time);
 
-        self.counter.total_packets += 1;
+        self.counter.total_arrivals += 1;
         match self.node.process_arrival(event) {
             ArrivalResult::Served(mut packet) => {
                 let departure_time: f64 = self.current_time + self.node.sample_service_time();
@@ -88,6 +88,7 @@ impl Simulator {
     fn handle_departure(&mut self, event: &Event) {
         self.counter.total_served_packets += 1;
 
+        self.counter.total_departures += 1;
         match self.node.process_departure() {
             // If the server continued processing after the departure, computes the departure time of the packet that just entered
             DepartureResult::ServerContinuedProcessing(mut next_packet) => {
