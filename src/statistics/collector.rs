@@ -13,6 +13,7 @@ pub struct EventCounter {
     event_count: usize,
     temp_ls: f64,
     temp_lq: f64,
+    temp_lx: f64,
 
     temp_wq: f64,
     temp_ws: f64,
@@ -36,8 +37,11 @@ impl EventCounter {
             total_queued_packets: 0,
             total_served_packets: 0,
             event_count: 0,
+            
             temp_ls: 0.0,
             temp_lq: 0.0,
+            temp_lx: 0.0,
+
             temp_wq: 0.0,
             temp_ws: 0.0,
         }
@@ -61,9 +65,9 @@ impl EventCounter {
 
         StatisticsSample {
             p_k,
-            l_q: self.compute_l_q(queue_length),
-            l_x: self.compute_l_x(),
-            l_s: self.compute_l_s(queue_length + active_servers),
+            l_q: self.compute_l_q(queue_length, self.total_event_time, dt),
+            l_x: self.compute_l_x(active_servers, self.total_event_time, dt),
+            l_s: self.compute_l_s(queue_length + active_servers, self.total_event_time, dt),
             w_q,
             w_s,
         }
@@ -80,23 +84,25 @@ impl EventCounter {
     }
 
     #[inline]
-    fn compute_l_q(&mut self, packets: usize) -> f64 {
-        self.temp_lq = (self.temp_lq * self.total_packets as f64 + packets as f64)
-            / (self.total_packets as f64 + 1.0);
+    fn compute_l_q(&mut self, queue_length: usize, total_event_time: f64, dt: f64) -> f64 {
+        self.temp_lq = ((self.temp_lq * (self.total_event_time - dt)) + (queue_length as f64 * dt))
+            / total_event_time;
 
         self.temp_lq
     }
 
     #[inline]
-    fn compute_l_x(&self) -> f64 {
-        self.total_served_packets as f64
-            / (self.total_queued_packets + self.total_served_packets) as f64
+    fn compute_l_x(&mut self, serving_packets: usize, total_event_time: f64, dt: f64) -> f64 {
+        self.temp_lx = ((self.temp_lx * (self.total_event_time - dt)) + (serving_packets as f64 * dt))
+            / total_event_time;
+
+        self.temp_lx
     }
 
     #[inline]
-    fn compute_l_s(&mut self, packets: usize) -> f64 {
-        self.temp_ls = (self.temp_ls * (self.event_count - 1) as f64 + packets as f64)
-            / self.event_count as f64;
+    fn compute_l_s(&mut self, packets_in_system: usize, total_event_time: f64, dt: f64) -> f64 {
+        self.temp_ls = (self.temp_ls * (total_event_time - dt) as f64 + (packets_in_system as f64 * dt))
+            / total_event_time;
 
         self.temp_ls
     }
