@@ -19,6 +19,7 @@ fn relative_error(simulated_value: f64, theory_value: f64) -> Option<f64> {
 
 pub struct DisplayPlots {
     stats: Option<StatisticsSample>,
+    theoretical_values: [f64; 5],
     receiver: Receiver<StatisticsSample>,
     command_sender: std::sync::mpsc::Sender<SimulationCommand>,
 }
@@ -31,6 +32,13 @@ impl DisplayPlots {
         Self {
             receiver,
             stats: None,
+            theoretical_values: [
+                l_q(LAMBDA, MU, C),
+                l_x(LAMBDA, MU, C),
+                l_s(LAMBDA, MU, C),
+                w_q(LAMBDA, MU, C),
+                w_s(LAMBDA, MU, C),
+            ],
             command_sender,
         }
     }
@@ -92,23 +100,25 @@ impl eframe::App for DisplayPlots {
                                 ui.label(egui::RichText::new("Theory").strong());
                                 ui.label(egui::RichText::new("Error").strong());
                                 ui.end_row();
-                                for (name, simulated_value, theory_value) in [
-                                    ("L_q", stats.l_q, l_q(LAMBDA, MU, C)),
-                                    ("L_x", stats.l_x, l_x(LAMBDA, MU, C)),
-                                    ("L_s", stats.l_s, l_s(LAMBDA, MU, C)),
-                                    ("W_q", stats.w_q, w_q(LAMBDA, MU, C)),
-                                    ("W_s", stats.w_s, w_s(LAMBDA, MU, C)),
-                                ] {
+                                for ((name, simulated_value), theory_value) in [
+                                    ("L_q", stats.l_q),
+                                    ("L_x", stats.l_x),
+                                    ("L_s", stats.l_s),
+                                    ("W_q", stats.w_q),
+                                    ("W_s", stats.w_s),
+                                ]
+                                .into_iter()
+                                .zip(self.theoretical_values.iter())
+                                {
                                     ui.label(egui::RichText::new(name).strong());
                                     ui.label(format!("{simulated_value:.4}"));
                                     ui.label(egui::RichText::new(format!("{theory_value:.4}")).italics());
 
-                                    let error: String = relative_error(simulated_value, theory_value)
+                                    let error: String = relative_error(simulated_value, *theory_value)
                                         .map_or_else(|| "N/A".to_string(), |value| format!("{value:.2}%"));
                                     ui.label(egui::RichText::new(error).italics());
                                     ui.end_row();
                                 }
-
                             });
 
                         ui.add_space(8.0);
