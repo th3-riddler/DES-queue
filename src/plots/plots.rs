@@ -1,10 +1,10 @@
 use std::sync::mpsc::Receiver;
 
 use eframe::egui;
-use egui_plot::{Bar, BarChart, Plot};
+use egui_plot::{Bar, BarChart, Corner, Legend, Plot};
 
 use crate::{
-    simulation::simulator::{SimulationCommand, FAST_FORWARD_EVENTS},
+    simulation::simulator::{FAST_FORWARD_EVENTS, SimulationCommand},
     statistics::collector::StatisticsSample,
 };
 
@@ -42,44 +42,75 @@ impl eframe::App for DisplayPlots {
         }
 
         egui::CentralPanel::default().show(ui, |ui| {
-            ui.heading("Queue Simulation Stats");
+            ui.horizontal(|ui| {
+                ui.heading("Queue Simulation Stats");
+                ui.add_space(ui.available_width() - 190.0);
+                if ui
+                    .add_sized(
+                        [180.0, 32.0],
+                        egui::Button::new(egui::RichText::new("Fast-forward 200k events").strong()),
+                    )
+                    .clicked()
+                {
+                    if self
+                        .command_sender
+                        .send(SimulationCommand::FastForward(FAST_FORWARD_EVENTS))
+                        .is_err()
+                    {
+                        eprintln!("Unable to fast-forward: simulation has stopped");
+                    }
+                }
+            });
             ui.separator();
 
-            if ui.button("Fast-forward 200k events").clicked() {
-                if self
-                    .command_sender
-                    .send(SimulationCommand::FastForward(FAST_FORWARD_EVENTS))
-                    .is_err()
-                {
-                    eprintln!("Unable to fast-forward: simulation has stopped");
-                }
-            }
-
             if let Some(stats) = &self.stats {
-                ui.group(|ui| {
-                    ui.label(egui::RichText::new("Current Metrics").strong());
-                    ui.label(format!("L_q: {:.4}", stats.l_q));
-                    ui.label(format!("L_x: {:.4}", stats.l_x));
-                    ui.label(format!("L_s: {:.4}", stats.l_s));
-                    ui.label(format!("W_q: {:.4}", stats.w_q));
-                    ui.label(format!("W_s: {:.4}", stats.w_s));
-                });
+                egui::Frame::group(ui.style())
+                    .fill(ui.visuals().faint_bg_color)
+                    .inner_margin(egui::Margin::same(12))
+                    .show(ui, |ui| {
+                        egui::Grid::new("statistics_comparison")
+                            .num_columns(3)
+                            .striped(true)
+                            .min_col_width(150.0)
+                            .show(ui, |ui| {
+                                ui.label(egui::RichText::new("Statistic"));
+                                ui.label(
+                                    egui::RichText::new("Simulated")
+                                        .strong()
+                                        .color(ui.visuals().hyperlink_color),
+                                );
+                                ui.label(egui::RichText::new("Theory").strong().weak());
+                                ui.end_row();
 
-                ui.add_space(10.0);
-                ui.label(egui::RichText::new("Probability Distribution p_k").strong());
+                                for (name, value) in [
+                                    ("L_q", stats.l_q),
+                                    ("L_x", stats.l_x),
+                                    ("L_s", stats.l_s),
+                                    ("W_q", stats.w_q),
+                                    ("W_s", stats.w_s),
+                                ] {
+                                    ui.label(egui::RichText::new(name).strong());
+                                    ui.label(format!("{value:.4}"));
+                                    ui.label(egui::RichText::new("-").italics());
+                                    ui.end_row();
+                                }
+                            });
+                    });
 
-                // Bar chart for p_k
+                ui.add_space(6.0);
+                ui.label(egui::RichText::new("Probability Distribution P_k").strong());
+
                 let bars: Vec<Bar> = stats
                     .p_k
                     .iter()
                     .enumerate()
-                    .map(|(k, &p)| Bar::new(k as f64, p).name(format!("k = {}", k)))
+                    .map(|(k, &p)| Bar::new(k as f64, p))
                     .collect();
 
-                let chart = BarChart::new("p_k", bars).width(0.7);
+                let chart = BarChart::new("Probability distribution p_k", bars).width(0.7);
 
                 Plot::new("p_k_plot")
-                    .height(ui.available_height())
+                    .height(ui.available_height().max(250.0))
                     .include_y(0.0)
                     .include_x(0.0)
                     .show(ui, |plot_ui| {
