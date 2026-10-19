@@ -4,7 +4,7 @@ use eframe::egui;
 use egui_plot::{Bar, BarChart, Plot};
 
 use crate::{
-    C, LAMBDA, MU, simulation::simulator::{FAST_FORWARD_EVENTS, SimulationCommand}, statistics::collector::StatisticsSample, utils::{l_q, l_x, l_s, w_q, w_s},
+    C, LAMBDA, MU, RHO, simulation::simulator::{FAST_FORWARD_EVENTS, SimulationCommand}, statistics::collector::StatisticsSample, utils::{erlang_c, l_q, l_s, l_x, w_q, w_s},
 };
 
 const ZERO_TOLERANCE: f64 = 1e-6;
@@ -19,7 +19,7 @@ fn relative_error(simulated_value: f64, theory_value: f64) -> Option<f64> {
 
 pub struct DisplayPlots {
     stats: Option<StatisticsSample>,
-    theoretical_values: [f64; 5],
+    theoretical_values: [f64; 6],
     receiver: Receiver<StatisticsSample>,
     command_sender: std::sync::mpsc::Sender<SimulationCommand>,
 }
@@ -38,6 +38,7 @@ impl DisplayPlots {
                 l_s(LAMBDA, MU, C),
                 w_q(LAMBDA, MU, C),
                 w_s(LAMBDA, MU, C),
+                erlang_c(C, C as f64 * RHO),
             ],
             command_sender,
         }
@@ -104,6 +105,7 @@ impl eframe::App for DisplayPlots {
                                     ("L_s", stats.l_s),
                                     ("W_q", stats.w_q),
                                     ("W_s", stats.w_s),
+                                    ("P_queue", stats.p_queue)
                                 ]
                                 .into_iter()
                                 .zip(self.theoretical_values.iter())

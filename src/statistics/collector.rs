@@ -11,12 +11,12 @@ pub struct EventCounter {
     pub total_queued_packets: usize,
     pub total_served_packets: usize,
 
-    in_queue_time: f64,
-    in_service_time: f64,
-    in_system_time: f64,
+    queue_length: f64,
+    serving_packets: f64,
+    packets_in_system: f64,
 
-    temp_wq: f64,
-    temp_ws: f64,
+    in_queue_time: f64,
+    in_system_time: f64,
 }
 
 pub struct StatisticsSample {
@@ -26,6 +26,7 @@ pub struct StatisticsSample {
     pub l_s: f64,
     pub w_q: f64,
     pub w_s: f64,
+    pub p_queue: f64,
 
     pub total_arrivals: usize,
     pub total_departures: usize,
@@ -42,12 +43,12 @@ impl EventCounter {
             total_queued_packets: 0,
             total_served_packets: 0,
             
-            in_queue_time: 0.0,
-            in_service_time: 0.0,
-            in_system_time: 0.0,
+            queue_length: 0.0,
+            serving_packets: 0.0,
+            packets_in_system: 0.0,
 
-            temp_wq: 0.0,
-            temp_ws: 0.0,
+            in_queue_time: 0.0,
+            in_system_time: 0.0,
         }
     }
 
@@ -61,7 +62,7 @@ impl EventCounter {
         self.total_event_time += dt;
 
         let (w_q, w_s) = match event_type {
-            EventType::Arrival => (self.temp_wq, self.temp_ws),
+            EventType::Arrival => (self.in_queue_time / self.total_served_packets as f64, self.in_system_time / self.total_served_packets as f64),
             EventType::Departure(packet) => (self.compute_w_q(packet), self.compute_w_s(packet))
         };
         let p_k: [f64; DEFAULT_VEC_SIZE] = self.compute_p_k(dt, queue_length + active_servers);
@@ -73,10 +74,16 @@ impl EventCounter {
             l_s: self.compute_l_s(queue_length + active_servers, self.total_event_time, dt),
             w_q,
             w_s,
+            p_queue: self.compute_p_queue(),
 
             total_arrivals: self.total_arrivals,
             total_departures: self.total_departures
         }
+    }
+
+    #[inline]
+    fn compute_p_queue(&self) -> f64 {
+        self.total_queued_packets as f64 / self.total_arrivals as f64
     }
 
     #[inline]
@@ -91,42 +98,38 @@ impl EventCounter {
 
     #[inline]
     fn compute_l_q(&mut self, queue_length: usize, total_event_time: f64, dt: f64) -> f64 {
-        self.in_queue_time += queue_length as f64 * dt;
+        self.queue_length += queue_length as f64 * dt;
 
-        self.in_queue_time / total_event_time
+        self.queue_length / total_event_time
     }
 
     #[inline]
     fn compute_l_x(&mut self, serving_packets: usize, total_event_time: f64, dt: f64) -> f64 {
-        self.in_service_time += serving_packets as f64 * dt;
+        self.serving_packets += serving_packets as f64 * dt;
         
-        self.in_service_time / total_event_time
+        self.serving_packets / total_event_time
     }
 
     #[inline]
     fn compute_l_s(&mut self, packets_in_system: usize, total_event_time: f64, dt: f64) -> f64 {
-        self.in_system_time += packets_in_system as f64 * dt;
+        self.packets_in_system += packets_in_system as f64 * dt;
 
-        self.in_system_time / total_event_time
+        self.packets_in_system / total_event_time
     }
 
     #[inline]
-    fn compute_w_q(&mut self, packet: &Packet) -> f64 {        
-        self.temp_wq = ((self.temp_wq * self.total_served_packets as f64)
-            + (packet.get_start_service_time().unwrap_or(0.0)
-                - packet.get_arrival_time().unwrap_or(0.0)))
-            / (self.total_served_packets as f64 + 1.0);
+    fn compute_w_q(&mut self, packet: &Packet) -> f64 {
+        let wait: f64 = packet.get_start_service_time().unwrap_or(0.0) - packet.get_arrival_time().unwrap_or(0.0);
+        self.in_queue_time += wait;
 
-        self.temp_wq
+        self.in_queue_time / self.total_served_packets as f64
     }
 
     #[inline]
     fn compute_w_s(&mut self, packet: &Packet) -> f64 {
-        self.temp_ws = ((self.temp_ws * self.total_served_packets as f64)
-            + (packet.get_departure_time().unwrap_or(0.0)
-                - packet.get_arrival_time().unwrap_or(0.0)))
-            / (self.total_served_packets as f64 + 1.0);
+        let wait: f64 = packet.get_departure_time().unwrap_or(0.0) - packet.get_arrival_time().unwrap_or(0.0);
+        self.in_system_time += wait;
 
-        self.temp_ws
+        self.in_system_time / self.total_served_packets as f64
     }
 }

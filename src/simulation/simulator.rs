@@ -105,14 +105,14 @@ impl Simulator {
 
         let dt: f64 = event.time - self.current_time;
         self.current_time = event.time;
-
+        
         let statistics: StatisticsSample = self.counter.update(
             dt,
             self.node._buffer().len(),
             self.node._active_servers(),
             &event.event_type,
         );
-        
+
         match event.event_type {
             EventType::Arrival => self.handle_arrival(&event),
             EventType::Departure(_) => self.handle_departure(&event),
