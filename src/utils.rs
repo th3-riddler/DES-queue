@@ -49,15 +49,15 @@ pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_VEC_SIZE] 
     } else {
         let mut curr: f64 = 1.0;
 
-        for k in 0..c {
+        for k in 1..=c {
             curr *= a / k as f64;
         }
 
         curr
     };
 
-    let c_buond: usize = c.min(DEFAULT_VEC_SIZE);
-    let s = v[..c_buond].iter().sum::<f64>() + (v_c / (1.0 - rho));
+    let c_bound: usize = c.min(DEFAULT_VEC_SIZE);
+    let s = v[..c_bound].iter().sum::<f64>() + (v_c / (1.0 - rho));
 
     let p_0: f64 = 1.0 / s;
 

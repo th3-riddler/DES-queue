@@ -7,10 +7,8 @@ use crate::{
     C, LAMBDA, MU, RHO,
     simulation::simulator::{FAST_FORWARD_EVENTS, SimulationCommand},
     statistics::collector::StatisticsSample,
-    utils::{erlang_c, l_q, l_s, l_x, p_k, w_q, w_s},
+    utils::{DEFAULT_VEC_SIZE, erlang_c, l_q, l_s, l_x, p_k, w_q, w_s},
 };
-
-use crate::utils::DEFAULT_VEC_SIZE;
 
 const ZERO_TOLERANCE: f64 = 1e-6;
 
@@ -172,10 +170,18 @@ impl eframe::App for DisplayPlots {
 
                 let bar_width: f64 = 0.7;
                 let half_w: f64 = bar_width / 2.0;
+                let mut max_height: f64 = self
+                    .theoretical_p_k
+                    .iter()
+                    .copied()
+                    .max_by(f64::total_cmp)
+                    .unwrap();
+
+                max_height += max_height * 0.1;
 
                 Plot::new("p_k_plot")
                     .height(ui.available_height().max(250.0))
-                    .default_y_bounds(0.0, 0.05)
+                    .default_y_bounds(0.0, max_height)
                     .include_y(0.0)
                     .include_x(0.0)
                     .show(ui, |plot_ui| {

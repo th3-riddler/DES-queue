@@ -4,13 +4,11 @@ mod statistics;
 mod utils;
 // mod tests;
 
-use crate::{
-    simulation::simulator::start_simulation,
-};
+use crate::simulation::simulator::start_simulation;
 
-const LAMBDA: f64 = 8.0;
-const MU: f64 = 9.0;
-const C: usize = 1;
+const LAMBDA: f64 = 300.0;
+const MU: f64 = 50.0;
+const C: usize = 12;
 const RHO: f64 = LAMBDA / (C as f64 * MU);
 
 fn main() -> Result<(), String> {
