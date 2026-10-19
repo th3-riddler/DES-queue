@@ -1,1 +1,1 @@
-pub mod plots;
+pub mod plotter;

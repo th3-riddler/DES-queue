@@ -14,5 +14,5 @@ const C: usize = 900;
 
 fn main() {
     let (receiver, command_sender) = start_simulation(LAMBDA, MU, C);
-    let _ = plots::plots::make_plots(receiver, command_sender);
+    let _ = plots::plotter::make_plots(receiver, command_sender);
 }

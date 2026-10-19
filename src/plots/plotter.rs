@@ -67,16 +67,14 @@ impl eframe::App for DisplayPlots {
                         [180.0, 32.0],
                         egui::Button::new(egui::RichText::new("Fast-forward 200k events").strong()),
                     )
-                    .clicked()
-                {
-                    if self
+                    .clicked() 
+                    && self
                         .command_sender
                         .send(SimulationCommand::FastForward(FAST_FORWARD_EVENTS))
                         .is_err()
                     {
                         eprintln!("Unable to fast-forward: simulation has stopped");
                     }
-                }
             });
             ui.separator();
 

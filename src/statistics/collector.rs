@@ -1,4 +1,4 @@
-use crate::simulation::{events::EventType, packet::{self, Packet}};
+use crate::simulation::{events::EventType, packet::Packet};
 
 const DEFAULT_VEC_SIZE: usize = 24;
 
@@ -62,7 +62,7 @@ impl EventCounter {
 
         let (w_q, w_s) = match event_type {
             EventType::Arrival => (self.temp_wq, self.temp_ws),
-            EventType::Departure(packet) => (self.compute_w_q(&packet), self.compute_w_s(&packet))
+            EventType::Departure(packet) => (self.compute_w_q(packet), self.compute_w_s(packet))
         };
         let p_k: [f64; DEFAULT_VEC_SIZE] = self.compute_p_k(dt, queue_length + active_servers);
 

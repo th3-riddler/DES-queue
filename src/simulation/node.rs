@@ -32,7 +32,7 @@ impl Node {
         if mu <= 0.0 {
             return Err("mu must be a positive value".to_string());
         }
-        if c <= 0 {
+        if c == 0 {
             return Err("c must be a positive value".to_string());
         }
 
@@ -68,16 +68,6 @@ impl Node {
     #[inline]
     fn is_a_server_available(&self) -> bool {
         self.total_servers - self.active_servers > 0
-    }
-
-    #[inline]
-    fn is_buffer_empty(&self) -> bool {
-        self.buffer.len() == 0
-    }
-
-    #[inline]
-    fn total_packets_number(&self) -> usize {
-        self.active_servers + self.buffer.len()
     }
 
     #[inline]
