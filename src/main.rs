@@ -8,9 +8,9 @@ use crate::{
     simulation::simulator::start_simulation,
 };
 
-const LAMBDA: f64 = 30.0;
-const MU: f64 = 5.0;
-const C: usize = 900;
+const LAMBDA: f64 = -2.0;
+const MU: f64 = -2.0;
+const C: usize = 2;
 
 fn main() {
     let (receiver, command_sender) = start_simulation(LAMBDA, MU, C);

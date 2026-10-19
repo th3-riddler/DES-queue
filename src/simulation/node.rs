@@ -25,19 +25,13 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(lambda: f64, mu: f64, c: usize) -> Result<Self, String> {
-        if lambda <= 0.0 {
-            return Err("lambda must be a positive value".to_string());
-        }
-        if mu <= 0.0 {
-            return Err("mu must be a positive value".to_string());
-        }
-        if c == 0 {
-            return Err("c must be a positive value".to_string());
-        }
+    pub fn new(mut lambda: f64, mut mu: f64, mut c: usize) -> Result<Self, String> {
+        lambda = lambda.max(1.0);
+        mu = mu.max(1.0);
+        c = c.max(1);
 
         let rho: f64 = lambda / (c as f64 * mu);
-        if rho > 1.0 {
+        if rho >= 1.0 {
             return Err("rho must be positive and less than 1.0".to_string());
         }
 
