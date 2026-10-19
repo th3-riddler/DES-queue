@@ -95,8 +95,7 @@ impl EventCounter {
             self.number_in_system[total_packets] += dt;
         }
 
-        self.number_in_system
-            .map(|time| time / self.total_event_time)
+        self.number_in_system.map(|time| time / self.total_event_time)
     }
 
     #[inline]
