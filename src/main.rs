@@ -8,11 +8,27 @@ use crate::{
     simulation::simulator::start_simulation,
 };
 
-const LAMBDA: f64 = -2.0;
-const MU: f64 = -2.0;
-const C: usize = 2;
+const LAMBDA: f64 = 300.0;
+const MU: f64 = 90.0;
+const C: usize = 3;
+const RHO: f64 = LAMBDA / (C as f64 / MU);
 
-fn main() {
+fn main() -> Result<(), String> {
+    if LAMBDA <= 0.0 {
+        return Err("LAMBDA must be a positive value".to_string());
+    }
+    if MU <= 0.0 {
+        return Err("MU must be a positive value".to_string());
+    }
+    if C == 0 {
+        return Err("C must be a positive value".to_string());
+    }
+    if RHO >= 1.0 {
+        return Err("rho must be positive and less than 1.0".to_string());
+    }
+
     let (receiver, command_sender) = start_simulation(LAMBDA, MU, C);
     let _ = plots::plotter::make_plots(receiver, command_sender);
+
+    Ok(())
 }

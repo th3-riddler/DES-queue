@@ -25,16 +25,7 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(mut lambda: f64, mut mu: f64, mut c: usize) -> Result<Self, String> {
-        lambda = lambda.max(1.0);
-        mu = mu.max(1.0);
-        c = c.max(1);
-
-        let rho: f64 = lambda / (c as f64 * mu);
-        if rho >= 1.0 {
-            return Err("rho must be positive and less than 1.0".to_string());
-        }
-
+    pub fn new(lambda: f64, mu: f64, c: usize) -> Result<Self, String> {
         let mut interarrival: Exponential = Exponential::new(ARRIVAL_SEED);
         interarrival
             .try_set_params(1.0 / lambda)
