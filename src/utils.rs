@@ -1,3 +1,5 @@
+pub const DEFAULT_VEC_SIZE: usize = 24;
+
 // Stable version of b-erlang function:
 // B(0, A) = 1
 // B(k, A) = A * B(k - 1, A) / (k + A * B(k - 1, A))
@@ -25,6 +27,41 @@ pub fn erlang_c(c: usize, a: f64) -> f64 {
     let rho = a / c as f64;
 
     b / (1.0 - rho + rho * b)
+}
+
+// Compute P_k
+pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_VEC_SIZE] {
+    let mut v: [f64; DEFAULT_VEC_SIZE] = [1.0; DEFAULT_VEC_SIZE];
+    v[0] = 1.0;
+
+    let a: f64 = lambda / mu;
+
+    for k in 1..DEFAULT_VEC_SIZE {
+        if k <= c {
+            v[k] = v[k - 1] * (a / k as f64);
+        } else {
+            v[k] = v[k - 1] * rho;
+        }
+    }
+
+    let v_c = if c < DEFAULT_VEC_SIZE {
+        v[c]
+    } else {
+        let mut curr: f64 = 1.0;
+
+        for k in 0..c {
+            curr *= a / k as f64;
+        }
+
+        curr
+    };
+
+    let c_buond: usize = c.min(DEFAULT_VEC_SIZE);
+    let s = v[..c_buond].iter().sum::<f64>() + (v_c / (1.0 - rho));
+
+    let p_0: f64 = 1.0 / s;
+
+    v.map(|f| f * p_0)
 }
 
 // Compute L_q

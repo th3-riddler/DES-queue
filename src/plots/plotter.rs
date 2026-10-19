@@ -1,11 +1,16 @@
 use std::sync::mpsc::Receiver;
 
 use eframe::egui;
-use egui_plot::{Bar, BarChart, Plot};
+use egui_plot::{Bar, BarChart, Line, Plot};
 
 use crate::{
-    C, LAMBDA, MU, RHO, simulation::simulator::{FAST_FORWARD_EVENTS, SimulationCommand}, statistics::collector::StatisticsSample, utils::{erlang_c, l_q, l_s, l_x, w_q, w_s},
+    C, LAMBDA, MU, RHO,
+    simulation::simulator::{FAST_FORWARD_EVENTS, SimulationCommand},
+    statistics::collector::StatisticsSample,
+    utils::{erlang_c, l_q, l_s, l_x, p_k, w_q, w_s},
 };
+
+use crate::utils::DEFAULT_VEC_SIZE;
 
 const ZERO_TOLERANCE: f64 = 1e-6;
 
@@ -20,6 +25,7 @@ fn relative_error(simulated_value: f64, theory_value: f64) -> Option<f64> {
 pub struct DisplayPlots {
     stats: Option<StatisticsSample>,
     theoretical_values: [f64; 6],
+    theoretical_p_k: [f64; DEFAULT_VEC_SIZE],
     receiver: Receiver<StatisticsSample>,
     command_sender: std::sync::mpsc::Sender<SimulationCommand>,
 }
@@ -40,6 +46,7 @@ impl DisplayPlots {
                 w_s(LAMBDA, MU, C),
                 erlang_c(C, C as f64 * RHO),
             ],
+            theoretical_p_k: p_k(LAMBDA, MU, RHO, C),
             command_sender,
         }
     }
@@ -68,14 +75,14 @@ impl eframe::App for DisplayPlots {
                         [180.0, 32.0],
                         egui::Button::new(egui::RichText::new("Fast-forward 200k events").strong()),
                     )
-                    .clicked() 
+                    .clicked()
                     && self
                         .command_sender
                         .send(SimulationCommand::FastForward(FAST_FORWARD_EVENTS))
                         .is_err()
-                    {
-                        eprintln!("Unable to fast-forward: simulation has stopped");
-                    }
+                {
+                    eprintln!("Unable to fast-forward: simulation has stopped");
+                }
             });
             ui.separator();
 
@@ -105,17 +112,22 @@ impl eframe::App for DisplayPlots {
                                     ("L_s", stats.l_s),
                                     ("W_q", stats.w_q),
                                     ("W_s", stats.w_s),
-                                    ("P_queue", stats.p_queue)
+                                    ("P_queue", stats.p_queue),
                                 ]
                                 .into_iter()
                                 .zip(self.theoretical_values.iter())
                                 {
                                     ui.label(egui::RichText::new(name).strong());
                                     ui.label(format!("{simulated_value:.4}"));
-                                    ui.label(egui::RichText::new(format!("{theory_value:.4}")).italics());
+                                    ui.label(
+                                        egui::RichText::new(format!("{theory_value:.4}")).italics(),
+                                    );
 
-                                    let error: String = relative_error(simulated_value, *theory_value)
-                                        .map_or_else(|| "N/A".to_string(), |value| format!("{value:.2}%"));
+                                    let error: String =
+                                        relative_error(simulated_value, *theory_value).map_or_else(
+                                            || "N/A".to_string(),
+                                            |value| format!("{value:.2}%"),
+                                        );
                                     ui.label(egui::RichText::new(error).italics());
                                     ui.end_row();
                                 }
@@ -158,12 +170,28 @@ impl eframe::App for DisplayPlots {
 
                 let chart = BarChart::new("Probability distribution p_k", bars).width(0.7);
 
+                let bar_width: f64 = 0.7;
+                let half_w: f64 = bar_width / 2.0;
+
                 Plot::new("p_k_plot")
                     .height(ui.available_height().max(250.0))
+                    .default_y_bounds(0.0, 0.05)
                     .include_y(0.0)
                     .include_x(0.0)
                     .show(ui, |plot_ui| {
                         plot_ui.bar_chart(chart);
+
+                        for (k, &p_theo) in self.theoretical_p_k.iter().enumerate() {
+                            let k_f = k as f64;
+                            let seg = Line::new(
+                                format!("theo_bar_{k}"),
+                                vec![[k_f - half_w, p_theo], [k_f + half_w, p_theo]],
+                            )
+                            .color(egui::Color32::GREEN)
+                            .width(2.5);
+
+                            plot_ui.line(seg);
+                        }
                     });
             } else {
                 ui.label("Waiting for simulation data...");
