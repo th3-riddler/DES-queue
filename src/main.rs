@@ -9,9 +9,9 @@ use crate::{
 };
 
 const LAMBDA: f64 = 300.0;
-const MU: f64 = 90.0;
-const C: usize = 3;
-const RHO: f64 = LAMBDA / (C as f64 / MU);
+const MU: f64 = 77.0;
+const C: usize = 4;
+const RHO: f64 = LAMBDA / (C as f64 * MU);
 
 fn main() -> Result<(), String> {
     if LAMBDA <= 0.0 {
@@ -24,7 +24,7 @@ fn main() -> Result<(), String> {
         return Err("C must be a positive value".to_string());
     }
     if RHO >= 1.0 {
-        return Err("rho must be positive and less than 1.0".to_string());
+        return Err(format!("rho: ({:.4}) must be positive and less than 1.0", RHO).to_string());
     }
 
     let (receiver, command_sender) = start_simulation(LAMBDA, MU, C);
