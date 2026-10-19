@@ -11,9 +11,9 @@ pub struct EventCounter {
     pub total_queued_packets: usize,
     pub total_served_packets: usize,
 
-    queue_length: f64,
-    serving_packets: f64,
-    packets_in_system: f64,
+    queue_length_time: f64,
+    serving_packets_time: f64,
+    packets_in_system_time: f64,
 
     in_queue_time: f64,
     in_system_time: f64,
@@ -43,9 +43,9 @@ impl EventCounter {
             total_queued_packets: 0,
             total_served_packets: 0,
             
-            queue_length: 0.0,
-            serving_packets: 0.0,
-            packets_in_system: 0.0,
+            queue_length_time: 0.0,
+            serving_packets_time: 0.0,
+            packets_in_system_time: 0.0,
 
             in_queue_time: 0.0,
             in_system_time: 0.0,
@@ -98,23 +98,23 @@ impl EventCounter {
 
     #[inline]
     fn compute_l_q(&mut self, queue_length: usize, total_event_time: f64, dt: f64) -> f64 {
-        self.queue_length += queue_length as f64 * dt;
+        self.queue_length_time += queue_length as f64 * dt;
 
-        self.queue_length / total_event_time
+        self.queue_length_time / total_event_time
     }
 
     #[inline]
     fn compute_l_x(&mut self, serving_packets: usize, total_event_time: f64, dt: f64) -> f64 {
-        self.serving_packets += serving_packets as f64 * dt;
+        self.serving_packets_time += serving_packets as f64 * dt;
         
-        self.serving_packets / total_event_time
+        self.serving_packets_time / total_event_time
     }
 
     #[inline]
     fn compute_l_s(&mut self, packets_in_system: usize, total_event_time: f64, dt: f64) -> f64 {
-        self.packets_in_system += packets_in_system as f64 * dt;
+        self.packets_in_system_time += packets_in_system as f64 * dt;
 
-        self.packets_in_system / total_event_time
+        self.packets_in_system_time / total_event_time
     }
 
     #[inline]
