@@ -193,7 +193,7 @@ impl eframe::App for DisplayPlots {
                                 format!("theo_bar_{k}"),
                                 vec![[k_f - half_w, p_theo], [k_f + half_w, p_theo]],
                             )
-                            .color(egui::Color32::GREEN)
+                            .color(egui::Color32::KHAKI)
                             .width(2.5);
 
                             plot_ui.line(seg);
