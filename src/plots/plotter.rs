@@ -280,7 +280,6 @@ fn show_distribution_plot(
         .map(|point| point.y)
         .max_by(f64::total_cmp)
         .unwrap_or(0.0);
-
     let y_max: f64 = (theoretical_max * 1.1).max(f64::EPSILON);
 
     Plot::new(plot_id)

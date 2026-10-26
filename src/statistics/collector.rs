@@ -79,8 +79,8 @@ impl EventCounter {
             EventType::Departure(packet) => (self.compute_w_q(packet), self.compute_w_s(packet)),
         };
         let p_k: [f64; DEFAULT_P_K_SIZE] = self.compute_p_k(dt, queue_length + active_servers);
-        let interarrival_times = self.compute_interarrival_times(self.total_arrivals);
-        let service_times = self.compute_service_times(self.total_departures);
+        let interarrival_times: Vec<f64> = self.compute_interarrival_times(self.total_arrivals);
+        let service_times: Vec<f64> = self.compute_service_times(self.total_departures);
 
         StatisticsSample {
             p_k,
