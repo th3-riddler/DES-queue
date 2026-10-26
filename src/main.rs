@@ -6,9 +6,9 @@ mod utils;
 
 use crate::simulation::simulator::start_simulation;
 
-const LAMBDA: f64 = 300.0;
-const MU: f64 = 50.0;
-const C: usize = 12;
+const LAMBDA: f64 = 924.0;
+const MU: f64 = 67.0;
+const C: usize = 14;
 const RHO: f64 = LAMBDA / (C as f64 * MU);
 
 fn main() -> Result<(), String> {

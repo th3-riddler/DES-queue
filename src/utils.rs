@@ -1,4 +1,11 @@
-pub const DEFAULT_VEC_SIZE: usize = 24;
+use egui_plot::PlotPoints;
+
+use crate::{LAMBDA, MU};
+
+pub const DEFAULT_P_K_SIZE: usize = 24;
+pub const DEFAULT_TIMES_ARRAY_SIZE: usize = 48;
+pub const LAMBDA_BIN_WIDTH: f64 = 0.1 / LAMBDA;
+pub const MU_BIN_WIDTH: f64 = 0.1 / MU;
 
 // Stable version of b-erlang function:
 // B(0, A) = 1
@@ -30,13 +37,13 @@ pub fn erlang_c(c: usize, a: f64) -> f64 {
 }
 
 // Compute P_k
-pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_VEC_SIZE] {
-    let mut v: [f64; DEFAULT_VEC_SIZE] = [1.0; DEFAULT_VEC_SIZE];
+pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_P_K_SIZE] {
+    let mut v: [f64; DEFAULT_P_K_SIZE] = [1.0; DEFAULT_P_K_SIZE];
     v[0] = 1.0;
 
     let a: f64 = lambda / mu;
 
-    for k in 1..DEFAULT_VEC_SIZE {
+    for k in 1..DEFAULT_P_K_SIZE {
         if k <= c {
             v[k] = v[k - 1] * (a / k as f64);
         } else {
@@ -44,7 +51,7 @@ pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_VEC_SIZE] 
         }
     }
 
-    let v_c = if c < DEFAULT_VEC_SIZE {
+    let v_c: f64 = if c < DEFAULT_P_K_SIZE {
         v[c]
     } else {
         let mut curr: f64 = 1.0;
@@ -56,8 +63,8 @@ pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_VEC_SIZE] 
         curr
     };
 
-    let c_bound: usize = c.min(DEFAULT_VEC_SIZE);
-    let s = v[..c_bound].iter().sum::<f64>() + (v_c / (1.0 - rho));
+    let c_bound: usize = c.min(DEFAULT_P_K_SIZE);
+    let s: f64 = v[..c_bound].iter().sum::<f64>() + (v_c / (1.0 - rho));
 
     let p_0: f64 = 1.0 / s;
 
@@ -102,4 +109,18 @@ pub fn w_s(lambda: f64, mu: f64, c: usize) -> f64 {
     let rho = lambda / mu_tot;
 
     (erlang_c(c, c as f64 * rho) + c as f64 * (1.0 - rho)) / (mu_tot * (1.0 - rho))
+}
+
+pub fn theoretical_int_time(lambda: f64) -> PlotPoints<'static> {
+    (0..100).map(|i| {
+        let x: f64 = i as f64 * LAMBDA_BIN_WIDTH;
+        [x, lambda * (-lambda * x).exp()]
+    }).collect()
+}
+
+pub fn theoretical_srv_time(mu: f64) -> PlotPoints<'static> {
+    (0..100).map(|i| {
+        let x: f64 = i as f64 * MU_BIN_WIDTH;
+        [x, mu * (-mu * x).exp()]
+    }).collect()
 }

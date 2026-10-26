@@ -1,13 +1,16 @@
 use std::sync::mpsc::Receiver;
 
 use eframe::egui;
-use egui_plot::{Bar, BarChart, Line, Plot};
+use egui_plot::{Bar, BarChart, Line, Plot, PlotPoints};
 
 use crate::{
-    C, LAMBDA, MU, RHO,
-    simulation::simulator::{FAST_FORWARD_EVENTS, SimulationCommand},
+    simulation::simulator::{SimulationCommand, FAST_FORWARD_EVENTS},
     statistics::collector::StatisticsSample,
-    utils::{DEFAULT_VEC_SIZE, erlang_c, l_q, l_s, l_x, p_k, w_q, w_s},
+    utils::{
+        erlang_c, l_q, l_s, l_x, p_k, theoretical_int_time, theoretical_srv_time, w_q, w_s,
+        DEFAULT_P_K_SIZE, LAMBDA_BIN_WIDTH, MU_BIN_WIDTH,
+    },
+    C, LAMBDA, MU, RHO,
 };
 
 const ZERO_TOLERANCE: f64 = 1e-6;
@@ -23,7 +26,9 @@ fn relative_error(simulated_value: f64, theory_value: f64) -> Option<f64> {
 pub struct DisplayPlots {
     stats: Option<StatisticsSample>,
     theoretical_values: [f64; 6],
-    theoretical_p_k: [f64; DEFAULT_VEC_SIZE],
+    theoretical_p_k: [f64; DEFAULT_P_K_SIZE],
+    theoretical_int_times: PlotPoints<'static>,
+    theoretical_srv_times: PlotPoints<'static>,
     receiver: Receiver<StatisticsSample>,
     command_sender: std::sync::mpsc::Sender<SimulationCommand>,
 }
@@ -45,6 +50,8 @@ impl DisplayPlots {
                 erlang_c(C, C as f64 * RHO),
             ],
             theoretical_p_k: p_k(LAMBDA, MU, RHO, C),
+            theoretical_int_times: theoretical_int_time(LAMBDA),
+            theoretical_srv_times: theoretical_srv_time(MU),
             command_sender,
         }
     }
@@ -156,54 +163,120 @@ impl eframe::App for DisplayPlots {
                             });
                     });
 
-                ui.add_space(6.0);
-                ui.label(egui::RichText::new("Probability Distribution P_k").strong());
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.add_space(6.0);
+                    ui.columns(2, |columns| {
+                        egui::Frame::group(columns[0].style())
+                            .inner_margin(egui::Margin::same(8))
+                            .show(&mut columns[0], |ui| {
+                                show_distribution_plot(
+                                    ui,
+                                    "Interarrival-time distribution",
+                                    "interarrival_times_plot",
+                                    LAMBDA_BIN_WIDTH,
+                                    &stats.interarrival_times,
+                                    &self.theoretical_int_times,
+                                );
+                            });
 
-                let bars: Vec<Bar> = stats
-                    .p_k
-                    .iter()
-                    .enumerate()
-                    .map(|(k, &p)| Bar::new(k as f64, p))
-                    .collect();
-
-                let chart = BarChart::new("Probability distribution p_k", bars).width(0.7);
-
-                let bar_width: f64 = 0.7;
-                let half_w: f64 = bar_width / 2.0;
-                let mut max_height: f64 = self
-                    .theoretical_p_k
-                    .iter()
-                    .copied()
-                    .max_by(f64::total_cmp)
-                    .unwrap();
-
-                max_height += max_height * 0.1;
-
-                Plot::new("p_k_plot")
-                    .height(ui.available_height().max(250.0))
-                    .default_y_bounds(0.0, max_height)
-                    .include_y(0.0)
-                    .include_x(0.0)
-                    .show(ui, |plot_ui| {
-                        plot_ui.bar_chart(chart);
-
-                        for (k, &p_theo) in self.theoretical_p_k.iter().enumerate() {
-                            let k_f = k as f64;
-                            let seg = Line::new(
-                                format!("theo_bar_{k}"),
-                                vec![[k_f - half_w, p_theo], [k_f + half_w, p_theo]],
-                            )
-                            .color(egui::Color32::KHAKI)
-                            .width(2.5);
-
-                            plot_ui.line(seg);
-                        }
+                        egui::Frame::group(columns[1].style())
+                            .inner_margin(egui::Margin::same(8))
+                            .show(&mut columns[1], |ui| {
+                                show_distribution_plot(
+                                    ui,
+                                    "Service-time distribution",
+                                    "service_times_plot",
+                                    MU_BIN_WIDTH,
+                                    &stats.service_times,
+                                    &self.theoretical_srv_times,
+                                );
+                            });
                     });
+
+                    egui::Frame::group(ui.style())
+                        .inner_margin(egui::Margin::same(8))
+                        .show(ui, |ui| {
+                            show_probability_plot(ui, stats, &self.theoretical_p_k);
+                        });
+                });
             } else {
                 ui.label("Waiting for simulation data...");
             }
         });
     }
+}
+
+fn show_probability_plot(
+    ui: &mut egui::Ui,
+    stats: &StatisticsSample,
+    theoretical_p_k: &[f64; DEFAULT_P_K_SIZE],
+) {
+    ui.label(egui::RichText::new("Probability distribution P_k").strong());
+
+    let bars: Vec<Bar> = stats
+        .p_k
+        .iter()
+        .enumerate()
+        .map(|(k, &p)| Bar::new(k as f64, p))
+        .collect();
+    let chart = BarChart::new("Probability distribution p_k", bars).width(0.7);
+    let bar_width: f64 = 0.7;
+    let half_w: f64 = bar_width / 2.0;
+    let mut max_height: f64 = theoretical_p_k
+        .iter()
+        .copied()
+        .chain(stats.p_k)
+        .max_by(f64::total_cmp)
+        .unwrap_or(1.0);
+    // max_height = (max_height * 1.1).max(f64::EPSILON);
+
+    Plot::new("p_k_plot")
+        .height(300.0)
+        .default_y_bounds(0.0, max_height)
+        .include_y(0.0)
+        .include_x(0.0)
+        .show(ui, |plot_ui| {
+            plot_ui.bar_chart(chart);
+
+            for (k, &p_theo) in theoretical_p_k.iter().enumerate() {
+                let k_f = k as f64;
+                let seg = Line::new(
+                    format!("theo_bar_{k}"),
+                    vec![[k_f - half_w, p_theo], [k_f + half_w, p_theo]],
+                )
+                .color(egui::Color32::KHAKI)
+                .width(2.5);
+                plot_ui.line(seg);
+            }
+        });
+}
+
+fn show_distribution_plot(
+    ui: &mut egui::Ui,
+    title: &str,
+    plot_id: &str,
+    bin_width: f64,
+    values: &[f64],
+    theoretical_values: &PlotPoints<'_>,
+) {
+    ui.label(egui::RichText::new(title).strong());
+    let bars: Vec<Bar> = values
+        .iter()
+        .enumerate()
+        .filter(|(_, probability)| **probability > 0.0)
+        .map(|(bucket, &probability)| {
+            let midpoint = (bucket as f64 + 0.5) * bin_width;
+            Bar::new(midpoint, probability)
+        })
+        .collect();
+    let chart: BarChart = BarChart::new(plot_id, bars).width(bin_width);
+
+    let line = Line::new("Exponential", theoretical_values.points()).color(egui::Color32::KHAKI);
+
+    Plot::new(plot_id).height(300.0).show(ui, |plot_ui| {
+        plot_ui.bar_chart(chart);
+        plot_ui.line(line);
+    });
 }
 
 pub fn make_plots(

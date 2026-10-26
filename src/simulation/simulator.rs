@@ -89,9 +89,11 @@ impl Simulator {
         self.counter.total_served_packets += 1;
 
         self.counter.total_departures += 1;
-        
+
         // If the server continued processing after the departure, computes the departure time of the packet that just entered
-        if let DepartureResult::ServerContinuedProcessing(mut next_packet) = self.node.process_departure() {
+        if let DepartureResult::ServerContinuedProcessing(mut next_packet) =
+            self.node.process_departure()
+        {
             next_packet.set_start_service_time(event.time);
 
             let departure_time: f64 = self.current_time + self.node.sample_service_time();
@@ -114,8 +116,19 @@ impl Simulator {
         );
 
         match event.event_type {
-            EventType::Arrival => self.handle_arrival(&event),
-            EventType::Departure(_) => self.handle_departure(&event),
+            EventType::Arrival => {
+                let interarrival_time: f64 = event.time - self.counter.previous_arrival_time;
+                self.counter.insert_interarrival_time(interarrival_time);
+                self.counter.previous_arrival_time = event.time;
+
+                self.handle_arrival(&event)
+            },
+            EventType::Departure(ref packet) => {
+                let service_time: f64 = packet.get_departure_time().unwrap_or(0.0) - packet.get_start_service_time().unwrap_or(0.0);
+                self.counter.insert_service_time(service_time);
+
+                self.handle_departure(&event);
+            },
         }
 
         Some(statistics)
