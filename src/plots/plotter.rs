@@ -222,17 +222,16 @@ fn show_probability_plot(
     let chart = BarChart::new("Probability distribution p_k", bars).width(0.7);
     let bar_width: f64 = 0.7;
     let half_w: f64 = bar_width / 2.0;
-    let mut max_height: f64 = theoretical_p_k
+    let theoretical_max = theoretical_p_k
         .iter()
         .copied()
-        .chain(stats.p_k)
         .max_by(f64::total_cmp)
-        .unwrap_or(1.0);
-    // max_height = (max_height * 1.1).max(f64::EPSILON);
+        .unwrap_or(0.0);
+    let y_max = (theoretical_max * 1.1).max(f64::EPSILON);
 
     Plot::new("p_k_plot")
         .height(300.0)
-        .default_y_bounds(0.0, max_height)
+        .default_y_bounds(0.0, y_max)
         .include_y(0.0)
         .include_x(0.0)
         .show(ui, |plot_ui| {
@@ -271,11 +270,25 @@ fn show_distribution_plot(
         .collect();
     let chart: BarChart = BarChart::new(plot_id, bars).width(bin_width);
 
-    let line = Line::new("Exponential", theoretical_values.points()).color(egui::Color32::KHAKI);
+    let theoretical_line = Line::new("Exponential", theoretical_values.points())
+        .color(egui::Color32::KHAKI);
 
-    Plot::new(plot_id).height(300.0).show(ui, |plot_ui| {
+    let theoretical_max = theoretical_values
+        .points()
+        .iter()
+        .copied()
+        .map(|point| point.y)
+        .max_by(f64::total_cmp)
+        .unwrap_or(0.0);
+
+    let y_max: f64 = (theoretical_max * 1.1).max(f64::EPSILON);
+
+    Plot::new(plot_id)
+    .height(300.0)
+    .default_y_bounds(0.0, y_max)
+    .show(ui, |plot_ui| {
         plot_ui.bar_chart(chart);
-        plot_ui.line(line);
+        plot_ui.line(theoretical_line);
     });
 }
 

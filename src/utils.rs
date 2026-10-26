@@ -112,14 +112,14 @@ pub fn w_s(lambda: f64, mu: f64, c: usize) -> f64 {
 }
 
 pub fn theoretical_int_time(lambda: f64) -> PlotPoints<'static> {
-    (0..100).map(|i| {
+    (0..=DEFAULT_TIMES_ARRAY_SIZE).map(|i| {
         let x: f64 = i as f64 * LAMBDA_BIN_WIDTH;
         [x, lambda * (-lambda * x).exp()]
     }).collect()
 }
 
 pub fn theoretical_srv_time(mu: f64) -> PlotPoints<'static> {
-    (0..100).map(|i| {
+    (0..=DEFAULT_TIMES_ARRAY_SIZE).map(|i| {
         let x: f64 = i as f64 * MU_BIN_WIDTH;
         [x, mu * (-mu * x).exp()]
     }).collect()
