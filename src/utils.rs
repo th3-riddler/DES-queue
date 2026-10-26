@@ -2,7 +2,7 @@ use egui_plot::PlotPoints;
 
 use crate::{LAMBDA, MU};
 
-pub const DEFAULT_P_K_SIZE: usize = 24;
+pub const DEFAULT_P_K_SIZE: usize = 48;
 pub const DEFAULT_TIMES_ARRAY_SIZE: usize = 48;
 pub const LAMBDA_BIN_WIDTH: f64 = 0.1 / LAMBDA;
 pub const MU_BIN_WIDTH: f64 = 0.1 / MU;
