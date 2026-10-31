@@ -39,7 +39,6 @@ pub fn erlang_c(c: usize, a: f64) -> f64 {
 // Compute P_k
 pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_P_K_SIZE] {
     let mut v: [f64; DEFAULT_P_K_SIZE] = [1.0; DEFAULT_P_K_SIZE];
-    v[0] = 1.0;
 
     let a: f64 = lambda / mu;
 
@@ -65,12 +64,14 @@ pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_P_K_SIZE] 
         sum = v.iter().sum();
         let mut term: f64 = v[DEFAULT_P_K_SIZE - 1];
 
-        // ... plus the elements between the last in the array and the c-th that is yet to be calculated
+        // ... plus the elements between the last in the array and the c-th one, which are yet to be calculated
         for k in DEFAULT_P_K_SIZE..c {
-            term *= a / (k + 1) as f64;
+            term *= a / k as f64;
             sum += term;
         }
 
+        // Set "term" as the (c+1)-th element, this will be used for the geometric series calculation in the next step
+        term *= a / c as f64;
         term
     };
 
