@@ -51,21 +51,23 @@ pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_P_K_SIZE] 
         }
     }
 
+    let mut sum: f64;
     let v_c: f64 = if c < DEFAULT_P_K_SIZE {
+        sum = v[..c].iter().sum();
+
         v[c]
     } else {
-        let mut curr: f64 = 1.0;
-
-        for k in 1..=c {
-            curr *= a / k as f64;
+        sum = v.iter().sum();
+        let mut term: f64 = v[DEFAULT_P_K_SIZE - 1];
+        for k in DEFAULT_P_K_SIZE..c {
+            term *= a / (k + 1) as f64;
+            sum += term;
         }
 
-        curr
+        term
     };
 
-    let c_bound: usize = c.min(DEFAULT_P_K_SIZE);
-    let s: f64 = v[..c_bound].iter().sum::<f64>() + (v_c / (1.0 - rho));
-
+    let s: f64 = sum + v_c / (1.0 - rho);
     let p_0: f64 = 1.0 / s;
 
     v.map(|f| f * p_0)
