@@ -51,14 +51,21 @@ pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_P_K_SIZE] 
         }
     }
 
+    // Summation of the first c elements in array v
     let mut sum: f64;
+
+    // If the c-th element is inside the array
+    // the sum of the first c elements is the sum of the elements before it
     let v_c: f64 = if c < DEFAULT_P_K_SIZE {
         sum = v[..c].iter().sum();
 
         v[c]
     } else {
+        // Else the sum of the first c elements is the sum of all the elements in the array...
         sum = v.iter().sum();
         let mut term: f64 = v[DEFAULT_P_K_SIZE - 1];
+
+        // ... plus the elements between the last in the array and the c-th that is yet to be calculated
         for k in DEFAULT_P_K_SIZE..c {
             term *= a / (k + 1) as f64;
             sum += term;
@@ -67,6 +74,7 @@ pub fn p_k(lambda: f64, mu: f64, rho: f64, c: usize) -> [f64; DEFAULT_P_K_SIZE] 
         term
     };
 
+    // ∑_{k=0}^{c-1} (cρ)^k/k! + (cρ)^c/c! * 1/(1 - ρ)
     let s: f64 = sum + v_c / (1.0 - rho);
     let p_0: f64 = 1.0 / s;
 
