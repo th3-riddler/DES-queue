@@ -102,6 +102,7 @@ impl EventCounter {
     /**
      * Discretizes the value passed in ranges, e.g. [0.0, 0.1) - [0.1, 0.2), etc...
      * 
+     *   e.g.
      * * 0.2098 * 10.0 = 2.098
      * * 2.098.floor() = 2
      * * 2 => [0.2, 0.3) range
