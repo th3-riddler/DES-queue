@@ -71,13 +71,13 @@ impl EventCounter {
     ) -> StatisticsSample {
         self.total_event_time += dt;
 
-        let (w_q, w_s) = match event_type {
-            EventType::Arrival => (
-                self.in_queue_time / self.total_served_packets as f64,
-                self.in_system_time / self.total_served_packets as f64,
-            ),
-            EventType::Departure(packet) => (self.compute_w_q(packet), self.compute_w_s(packet)),
-        };
+        // The departing packet must be counted before computing the averages,
+        // otherwise the sum of n waiting times would be divided by n - 1
+        if let EventType::Departure(packet) = event_type {
+            self.total_served_packets += 1;
+            self.add_waiting_times(packet);
+        }
+        let (w_q, w_s) = (self.compute_w_q(), self.compute_w_s());
         let p_k: [f64; DEFAULT_P_K_SIZE] = self.compute_p_k(dt, queue_length + active_servers);
         let interarrival_times: Vec<f64> = self.compute_interarrival_times(self.total_arrivals);
         let service_times: Vec<f64> = self.compute_service_times(self.total_departures);
@@ -139,6 +139,10 @@ impl EventCounter {
 
     #[inline]
     fn compute_p_queue(&self) -> f64 {
+        if self.total_arrivals == 0 {
+            return 0.0;
+        }
+
         self.total_queued_packets as f64 / self.total_arrivals as f64
     }
 
@@ -173,19 +177,27 @@ impl EventCounter {
     }
 
     #[inline]
-    fn compute_w_q(&mut self, packet: &Packet) -> f64 {
-        let wait: f64 = packet.get_start_service_time().unwrap_or(0.0)
-            - packet.get_arrival_time().unwrap_or(0.0);
-        self.in_queue_time += wait;
+    fn add_waiting_times(&mut self, packet: &Packet) {
+        let arrival: f64 = packet.get_arrival_time().unwrap_or(0.0);
+
+        self.in_queue_time += packet.get_start_service_time().unwrap_or(0.0) - arrival;
+        self.in_system_time += packet.get_departure_time().unwrap_or(0.0) - arrival;
+    }
+
+    #[inline]
+    fn compute_w_q(&self) -> f64 {
+        if self.total_served_packets == 0 {
+            return 0.0;
+        }
 
         self.in_queue_time / self.total_served_packets as f64
     }
 
     #[inline]
-    fn compute_w_s(&mut self, packet: &Packet) -> f64 {
-        let wait: f64 =
-            packet.get_departure_time().unwrap_or(0.0) - packet.get_arrival_time().unwrap_or(0.0);
-        self.in_system_time += wait;
+    fn compute_w_s(&self) -> f64 {
+        if self.total_served_packets == 0 {
+            return 0.0;
+        }
 
         self.in_system_time / self.total_served_packets as f64
     }

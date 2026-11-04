@@ -86,8 +86,6 @@ impl Simulator {
 
     /// Handles the departure events
     fn handle_departure(&mut self, event: &Event) {
-        self.counter.total_served_packets += 1;
-
         self.counter.total_departures += 1;
 
         // If the server continued processing after the departure, computes the departure time of the packet that just entered
